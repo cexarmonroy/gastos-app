@@ -294,7 +294,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className={`font-semibold text-sm flex-shrink-0 ${record.type === 'Ingreso' ? 'text-success' : 'text-white'}`}>
-                    {record.type === 'Ingreso' ? '+' : '-'}${record.amount.toLocaleString('es-CL')}
+                    {record.type === 'Ingreso' ? '+' : '-'}${Math.abs(record.amount).toLocaleString('es-CL')}
                   </div>
                 </div>
               ))

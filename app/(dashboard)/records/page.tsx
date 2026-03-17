@@ -349,10 +349,9 @@ export default function RecordsPage() {
                       </span>
                     </td>
                     <td className="px-3 md:px-6 py-3 md:py-4">
-                      <span className={`inline-flex items-center px-1.5 md:px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium border
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap
                         ${record.type === 'Ingreso' ? 'bg-success/10 text-success border-success/20' : 'bg-danger/10 text-danger border-danger/20'}`}>
-                        {record.type === 'Ingreso' ? 'Ing' : 'Egr'}
-                        <span className="hidden sm:inline ml-1">{record.type === 'Ingreso' ? 'reso' : 'eso'}</span>
+                        {record.type}
                       </span>
                     </td>
                     <td className={`px-3 md:px-6 py-3 md:py-4 font-semibold text-xs md:text-sm ${record.amount < 0 ? 'text-danger' : record.type === 'Ingreso' ? 'text-success' : ''}`}>
