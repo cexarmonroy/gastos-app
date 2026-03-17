@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Receipt, Settings, PieChart, X, Menu } from "lucide-react";
 import clsx from "clsx";
+import Image from "next/image";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -20,8 +21,19 @@ export function Sidebar() {
   const SidebarContent = () => (
     <>
       <div className="p-4 md:p-6 flex items-center justify-between">
-        <Link href="/dashboard" className="text-xl font-bold tracking-tight" onClick={() => setIsMobileOpen(false)}>
-          Tesorería<span className="text-gradient">CGPA</span>
+        <Link href="/dashboard" className="flex items-center gap-3 group" onClick={() => setIsMobileOpen(false)}>
+          <div className="relative w-10 h-10 md:w-12 md:h-12 overflow-hidden rounded-xl border border-white/10 bg-white/5 p-1 transition-all duration-500 group-hover:scale-110 group-hover:border-primary/50 group-hover:shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+            <Image
+              src="/logo-cgpa.png"
+              alt="Logo CGPA"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold tracking-tight text-white leading-tight">Tesorería</span>
+            <span className="text-sm font-semibold text-primary -mt-1">CGPA</span>
+          </div>
         </Link>
         <button
           onClick={() => setIsMobileOpen(false)}

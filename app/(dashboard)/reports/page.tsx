@@ -7,6 +7,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
+import { getBase64ImageFromUrl } from "@/lib/pdf-utils";
 
 export default function ReportsPage() {
   const [records, setRecords] = useState<any[]>([]);
@@ -54,20 +55,29 @@ export default function ReportsPage() {
     return filtered;
   };
 
-  const generateReport = () => {
+  const generateReport = async () => {
     setIsGenerating(true);
     const filteredRecords = getFilteredRecords();
     
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    let yPosition = 20;
+    let yPosition = 15;
 
-    // Título del reporte
-    doc.setFontSize(20);
+    // Agregar Logo
+    try {
+      const logoBase64 = await getBase64ImageFromUrl("/logo-cgpa.png");
+      doc.addImage(logoBase64, "PNG", 14, 10, 20, 20);
+      yPosition = 20;
+    } catch (error) {
+      console.error("Could not load logo for PDF", error);
+    }
+
+    // Título del reporte - Desplazado si hay logo
+    doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text("Reporte Financiero", pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 10;
+    doc.text("Reporte Financiero", 40, yPosition);
+    yPosition += 8;
 
     // Información del reporte
     doc.setFontSize(10);
@@ -80,16 +90,16 @@ export default function ReportsPage() {
     } else {
       reportInfo = "Período: Todos los registros";
     }
-    doc.text(reportInfo, pageWidth / 2, yPosition, { align: "center" });
+    doc.text(reportInfo, 40, yPosition);
     yPosition += 5;
 
     if (selectedCategory !== "todos") {
       const categoryName = selectedCategory === "caja_chica" ? "Caja Chica" : "Fondo de Ahorro";
-      doc.text(`Categoría: ${categoryName}`, pageWidth / 2, yPosition, { align: "center" });
+      doc.text(`Categoría: ${categoryName}`, 40, yPosition);
       yPosition += 5;
     }
 
-    doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}`, pageWidth / 2, yPosition, { align: "center" });
+    doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}`, 40, yPosition);
     yPosition += 15;
 
     // Resumen de estadísticas

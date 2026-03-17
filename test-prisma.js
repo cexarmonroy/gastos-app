@@ -7,6 +7,7 @@ async function main() {
     const users = await prisma.user.findMany();
     console.log('Connection successful!');
     console.log('Users found:', users.length);
+    users.forEach(u => console.log('Email:', u.email));
   } catch (e) {
     console.error('Connection failed:');
     console.error(e);

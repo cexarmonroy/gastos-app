@@ -8,6 +8,7 @@ import { RecordModal } from "@/components/ui/RecordModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fetchRecordsData } from "@/app/actions/sheets";
+import { getBase64ImageFromUrl } from "@/lib/pdf-utils";
 
 type SortField = "date" | "description" | "type" | "amount";
 type SortDirection = "asc" | "desc";
@@ -32,13 +33,25 @@ export default function RecordsPage() {
     });
   }, []);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const doc = new jsPDF();
     const filteredRecords = records.filter(r => r.category === activeTab);
     const title = activeTab === "caja_chica" ? "Reporte de Caja Chica" : "Reporte de Fondo de Ahorro";
     
+    try {
+      const logoBase64 = await getBase64ImageFromUrl("/logo-cgpa.png");
+      doc.addImage(logoBase64, "PNG", 14, 10, 20, 20);
+    } catch (error) {
+      console.error("Could not load logo for PDF", error);
+    }
+
     doc.setFont("helvetica", "bold");
-    doc.text(title, 14, 20);
+    doc.setFontSize(18);
+    doc.text(title, 40, 22);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 40, 28);
     
     const tableColumn = ["Fecha", "Descripción", "Tipo", "Monto", "Estado"];
     const tableRows = filteredRecords.map(r => [
@@ -52,7 +65,7 @@ export default function RecordsPage() {
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 30,
+      startY: 35,
       theme: 'grid',
       headStyles: { fillColor: [99, 102, 241] } 
     });
