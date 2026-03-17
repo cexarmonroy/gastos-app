@@ -1,12 +1,94 @@
 "use server";
 
 import Papa from "papaparse";
+import { revalidatePath } from "next/cache";
 
 const SHEET_ID = "1YnLByK8mr5e-qtKsQxPKuirhxm-1J1QK4F4fxG2Yi3Q";
-// El GID por defecto es 0 (primera pestaña). Dejaremos un fallback para Fondo de Ahorro.
-const CAJA_CHICA_GID = "0"; 
-// GID correcto para Fondo de Ahorro (encontrado: 410879135)
+const CAJA_CHICA_GID = "968865594"; 
 const FONDO_AHORRO_GID = process.env.FONDO_AHORRO_GID || "410879135"; 
+
+interface NewRecord {
+  date: string;
+  description: string;
+  amount: number;
+  type: "Ingreso" | "Egreso";
+  category: "caja_chica" | "fondo_ahorro";
+  tags?: string;
+}
+
+export async function addRecord(data: NewRecord) {
+  try {
+    const { google } = await import("googleapis");
+
+    // Service Account Auth using dynamic import and constructor object
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+
+    const sheets = google.sheets({ version: "v4", auth });
+    
+    // Obtener nombres de pestañas por GID
+    const spreadsheet = await sheets.spreadsheets.get({
+      spreadsheetId: SHEET_ID,
+    });
+    
+    const gidToUpdate = data.category === "caja_chica" ? CAJA_CHICA_GID : FONDO_AHORRO_GID;
+    const sheet = spreadsheet.data.sheets?.find(s => s.properties?.sheetId?.toString() === gidToUpdate);
+    
+    if (!sheet || !sheet.properties?.title) {
+      throw new Error(`No se encontró la pestaña con GID ${gidToUpdate}`);
+    }
+
+    const sheetTitle = sheet.properties.title;
+
+    // Encontrar la primera fila vacía en la columna A para evitar saltarse filas con fórmulas
+    const checkRange = `${sheetTitle}!A:A`;
+    const checkResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: checkRange,
+    });
+    
+    const lastRow = checkResponse.data.values ? checkResponse.data.values.length : 0;
+    const nextRow = lastRow + 1;
+    const range = `${sheetTitle}!A${nextRow}:D${nextRow}`;
+    
+    // Formatear monto según tipo (negativo para Egresos)
+    const finalAmount = data.type === "Egreso" ? -Math.abs(data.amount) : Math.abs(data.amount);
+    
+    // Formatear fecha para el CSV (dd/mm/yyyy)
+    const dateObj = new Date(data.date);
+    const formattedDate = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
+
+    // Orden correcto según la planilla: Fecha | Monto | Tipo | Descripción
+    const values = [
+      [
+        formattedDate,
+        finalAmount.toLocaleString('es-CL'),
+        data.type,
+        data.description
+      ]
+    ];
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range,
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values,
+      },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/records");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error adding record to Sheets:", error);
+    return { success: false, error: (error as any).message };
+  }
+}
 
 export async function fetchRecordsData() {
   try {

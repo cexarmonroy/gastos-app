@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <main className="min-h-screen flex flex-col relative overflow-hidden">
             {children}
