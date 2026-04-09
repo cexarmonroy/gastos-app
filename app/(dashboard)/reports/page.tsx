@@ -164,6 +164,16 @@ export default function ReportsPage() {
           1: { cellWidth: 70 },
           2: { cellWidth: 30 },
           3: { cellWidth: 40, halign: 'right' }
+        },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 2) {
+            const type = data.cell.raw as string;
+            if (type === 'Ingreso') {
+              data.cell.styles.textColor = [34, 197, 94]; // Green color for Income
+            } else if (type === 'Egreso') {
+              data.cell.styles.textColor = [239, 68, 68]; // Red color for Expense
+            }
+          }
         }
       });
     }

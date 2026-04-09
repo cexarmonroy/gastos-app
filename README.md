@@ -1,49 +1,93 @@
-# Tesorería Centro de Padres - Gastos App
+# 📊 Tesorería Centro de Padres - Gastos App
 
-Esta es una aplicación web para la gestión y visualización de finanzas, diseñada específicamente para el Centro de Padres. 
-
-## Características
-- **Dashboard en Tiempo Real**: Visualización de KPIs (Saldo Total, Caja Chica, Fondo de Ahorro).
-- **Integración con Google Sheets**: Los datos se sincronizan automáticamente desde hojas de cálculo de Google.
-- **Gráficos Dinámicos**: Análisis de flujo de ingresos y egresos mediante Recharts.
-- **Autenticación Segura**: Gestión de usuarios con NextAuth y Prisma.
-- **Generación de Reportes**: Exportación de datos a PDF.
-
-## Tecnologías Utilizadas
-- **Framework**: Next.js 16 (App Router)
-- **Base de Datos**: PostgreSQL (Supabase) con Prisma ORM
-- **Estilos**: Tailwind CSS 4
-- **Autenticación**: NextAuth.js
-
-## Configuración Local
-
-1. Clona el repositorio.
-2. Instala las dependencias:
-   ```bash
-   npm install
-   ```
-3. Configura las variables de entorno en un archivo `.env`:
-   ```env
-   DATABASE_URL="tu_url_de_supabase"
-   FONDO_AHORRO_GID="id_de_la_hoja"
-   NEXTAUTH_SECRET="un_secreto_aleatorio"
-   NEXTAUTH_URL="http://localhost:3000"
-   ```
-4. Sincroniza la base de datos:
-   ```bash
-   npx prisma db push
-   ```
-5. Inicia el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
-
-## Despliegue en Vercel
-
-1. Sube el código a un repositorio de GitHub.
-2. Conecta el repositorio a un nuevo proyecto en Vercel.
-3. Asegúrate de configurar todas las variables de entorno listadas arriba en el dashboard de Vercel.
-4. Vercel ejecutará automáticamente el build y el despliegue.
+Una plataforma moderna y eficiente diseñada para la gestión financiera del Centro de Padres y Apoderados (CGPA). Esta aplicación permite centralizar el control de ingresos y egresos, integrándose directamente con Google Sheets para mantener la transparencia y accesibilidad de los datos en tiempo real.
 
 ---
-© 2026 - Tesorería Centro de Padres
+
+## ✨ Características Principales
+
+- **📈 Dashboard Inteligente**: Visualización inmediata de KPIs críticos como Saldo Total, Caja Chica y Fondo de Ahorro con gráficos dinámicos (Recharts).
+- **🔄 Sincronización con Google Sheets**: Los datos se leen y escriben directamente en hojas de cálculo de Google, permitiendo una transición fluida entre la app y el flujo de trabajo tradicional.
+- **📑 Gestión de Registros**: Módulos especializados para visualizar y filtrar movimientos por fecha, descripción o categoría (Caja Chica / Fondo de Ahorro).
+- **🖨️ Reportes PDF**: Generación instantánea de reportes profesionales con logo institucional, listos para ser compartidos con la comunidad.
+- **🔐 Seguridad y Roles**: Autenticación robusta mediante NextAuth y Prisma, con control de acceso para administradores y apoderados.
+- **📱 Interfaz Premium**: Diseño responsivo y moderno utilizando Tailwind CSS 3.4 y animaciones fluidas.
+
+---
+
+## 🛠️ Stack Tecnológico
+
+- **Frontend**: [Next.js 15](https://nextjs.org/) (App Router) + React 19
+- **Backend/ORM**: [Prisma](https://www.prisma.io/) con PostgreSQL (Supabase)
+- **Estilos**: [Tailwind CSS 3.4](https://tailwindcss.com/)
+- **Iconografía**: [Lucide React](https://lucide.dev/)
+- **Gráficos**: [Recharts](https://recharts.org/)
+- **Autenticación**: [NextAuth.js](https://next-auth.js.org/)
+- **Integraciones**: Google APIs Core & Sheets API
+
+---
+
+## 📂 Estructura y Arquitectura
+
+Para un detalle técnico profundo sobre el diseño del sistema, flujos de datos y seguridad, consulta nuestra [Documentación de Arquitectura](architecture.md).
+
+```text
+├── app/                  # Rutas de Next.js (Dashboard, Registros, Reportes)
+├── components/           # Componentes UI reutilizables y layouts
+│   ├── layout/           # Sidebar, Navbar y estructura global
+│   └── ui/               # Componentes atómicos (Modales, Tablas, Inputs)
+├── lib/                  # Utilidades (PDF, formateo, configuración de clientes)
+├── prisma/               # Esquema de base de datos y migraciones
+├── public/               # Activos estáticos (Logos, imágenes)
+└── scripts/              # Herramientas de extracción y depuración de GIDs
+```
+
+---
+
+## 🚀 Configuración Local
+
+### 1. Clonar y Preparar
+```bash
+git clone <url-del-repo>
+cd gastos-app
+npm install
+```
+
+### 2. Variables de Entorno
+Crea un archivo `.env` en la raíz con la siguiente configuración necesaria:
+
+```env
+# Database
+DATABASE_URL="postgresql://user:password@host:port/dbname"
+
+# NextAuth
+NEXTAUTH_SECRET="tu_secreto_generado"
+NEXTAUTH_URL="http://localhost:3001"
+
+# Google Sheets Integration
+GOOGLE_SHEET_ID="id_de_tu_hoja_de_calculo"
+CAJA_CHICA_GID="gid_especifico_hoja"
+FONDO_AHORRO_GID="gid_especifico_hoja"
+
+# Google API Service Account (JSON string o file path)
+GOOGLE_CLIENT_EMAIL="tu_cuenta_de_servicio"
+GOOGLE_PRIVATE_KEY="tu_llave_privada"
+```
+
+### 3. Base de Datos e Inicio
+```bash
+npx prisma db push
+npm run dev
+```
+La aplicación estará disponible en `http://localhost:3001`.
+
+---
+
+## 📝 Notas de Desarrollo
+
+- Se recomienda utilizar el puerto **3001** para evitar conflictos con otros servicios locales comunes.
+- El sistema utiliza `jspdf-autotable` para garantizar la consistencia en los reportes exportados.
+- Para depurar IDs de hojas de cálculo, utiliza los scripts `get-all-gids.js` o `test-fetch-gids.js`.
+
+---
+© 2026 - **Tesorería Centro de Padres** | Impulsando la transparencia financiera.

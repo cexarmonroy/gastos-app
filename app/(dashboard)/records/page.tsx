@@ -67,7 +67,17 @@ export default function RecordsPage() {
       body: tableRows,
       startY: 35,
       theme: 'grid',
-      headStyles: { fillColor: [99, 102, 241] } 
+      headStyles: { fillColor: [99, 102, 241] },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 2) {
+          const type = data.cell.raw as string;
+          if (type === 'Ingreso') {
+            data.cell.styles.textColor = [34, 197, 94]; // Green color for Income
+          } else if (type === 'Egreso') {
+            data.cell.styles.textColor = [239, 68, 68]; // Red color for Expense
+          }
+        }
+      }
     });
 
     doc.save(`Reporte_Registros_${format(new Date(), "dd-MM-yyyy")}.pdf`);
