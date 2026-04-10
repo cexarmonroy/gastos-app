@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Lock, Mail, ChevronRight, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,9 +48,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md z-10 animate-in fade-in zoom-in-95 duration-500">
         
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block text-2xl font-bold tracking-tight mb-2">
+          <div className="inline-block text-2xl font-bold tracking-tight mb-2 text-white">
             Tesorería<span className="text-gradient">CGPA</span>
-          </Link>
+          </div>
           <p className="text-white/50">Panel del Centro General de Padres</p>
         </div>
 

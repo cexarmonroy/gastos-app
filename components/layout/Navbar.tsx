@@ -39,7 +39,7 @@ export function Navbar() {
         </div>
 
         <button 
-          onClick={() => signOut({ callbackUrl: '/login' })}
+          onClick={() => signOut({ callbackUrl: '/' })}
           className="p-1.5 md:p-2 text-danger/80 hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
           title="Cerrar sesión"
         >

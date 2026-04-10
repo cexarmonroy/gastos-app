@@ -2,15 +2,29 @@ import { withAuth } from "next-auth/middleware";
 
 export default withAuth({
   pages: {
-    signIn: "/login",
+    signIn: "/",
   },
   callbacks: {
-    authorized: ({ token }) => !!token,
+    authorized: ({ token, req }) => {
+      const { pathname } = req.nextUrl;
+      
+      if (!token) return false;
+
+      // Rutas restringidas
+      const restrictedRoutes = ["/records", "/reports"];
+      const isRestricted = restrictedRoutes.some(route => pathname.startsWith(route));
+
+      if (isRestricted) {
+        return token.role === "ADMIN" || token.role === "DIRECTIVA";
+      }
+
+      return true;
+    },
   },
 });
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|login).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };

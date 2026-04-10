@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Receipt, Settings, PieChart, X, Menu } from "lucide-react";
@@ -8,15 +9,19 @@ import clsx from "clsx";
 import Image from "next/image";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/records", icon: Receipt, label: "Registros" },
-  { href: "/reports", icon: PieChart, label: "Reportes" },
-  { href: "/settings", icon: Settings, label: "Configuración" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["ADMIN", "USER", "DIRECTIVA"] },
+  { href: "/records", icon: Receipt, label: "Registros", roles: ["ADMIN", "DIRECTIVA"] },
+  { href: "/reports", icon: PieChart, label: "Reportes", roles: ["ADMIN", "DIRECTIVA"] },
+  { href: "/settings", icon: Settings, label: "Configuración", roles: ["ADMIN", "USER", "DIRECTIVA"] },
 ];
 
 export function Sidebar() {
+  const { data: session } = useSession();
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const userRole = session?.user?.role || "USER";
+  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
 
   const SidebarContent = () => (
     <>
@@ -44,7 +49,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 px-2 md:px-4 space-y-2 mt-4">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
