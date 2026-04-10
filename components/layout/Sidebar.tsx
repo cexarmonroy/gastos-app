@@ -10,9 +10,9 @@ import Image from "next/image";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["ADMIN", "USER", "DIRECTIVA"] },
-  { href: "/records", icon: Receipt, label: "Registros", roles: ["ADMIN", "DIRECTIVA"] },
+  { href: "/records", icon: Receipt, label: "Registros", roles: ["ADMIN", "USER", "DIRECTIVA"] },
   { href: "/reports", icon: PieChart, label: "Reportes", roles: ["ADMIN", "DIRECTIVA"] },
-  { href: "/settings", icon: Settings, label: "Configuración", roles: ["ADMIN", "USER", "DIRECTIVA"] },
+  { href: "/settings", icon: Settings, label: "Configuración", roles: ["ADMIN", "DIRECTIVA"] },
 ];
 
 export function Sidebar() {

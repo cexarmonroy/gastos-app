@@ -11,7 +11,7 @@ export default withAuth({
       if (!token) return false;
 
       // Rutas restringidas
-      const restrictedRoutes = ["/records", "/reports"];
+  const restrictedRoutes = ["/reports"];
       const isRestricted = restrictedRoutes.some(route => pathname.startsWith(route));
 
       if (isRestricted) {

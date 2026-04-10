@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Plus, Search, Filter, Download, Edit, Trash2, ArrowUp, ArrowDown, ChevronUp, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -14,6 +15,7 @@ type SortField = "date" | "description" | "type" | "amount";
 type SortDirection = "asc" | "desc";
 
 export default function RecordsPage() {
+  const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"caja_chica" | "fondo_ahorro">("caja_chica");
@@ -24,6 +26,8 @@ export default function RecordsPage() {
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+
+  const isAdminOrDirectiva = session?.user?.role === "ADMIN" || session?.user?.role === "DIRECTIVA";
 
   useEffect(() => {
     fetchRecordsData().then(data => {
@@ -164,14 +168,16 @@ export default function RecordsPage() {
           <p className="text-white/60 text-sm md:text-base">Administra todos los ingresos y egresos de tu base de datos.</p>
         </div>
         
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <button onClick={handleExportPDF} className="btn-secondary flex items-center justify-center gap-2 flex-1 md:flex-none">
-            <Download className="w-4 h-4" /> <span className="hidden sm:inline">Exportar</span>
-          </button>
-          <button onClick={() => setIsModalOpen(true)} className="btn-primary flex items-center justify-center gap-2 shadow-lg flex-1 md:flex-none">
-            <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nuevo</span><span className="sm:hidden">+</span>
-          </button>
-        </div>
+        {isAdminOrDirectiva && (
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <button onClick={handleExportPDF} className="btn-secondary flex items-center justify-center gap-2 flex-1 md:flex-none">
+              <Download className="w-4 h-4" /> <span className="hidden sm:inline">Exportar</span>
+            </button>
+            <button onClick={() => setIsModalOpen(true)} className="btn-primary flex items-center justify-center gap-2 shadow-lg flex-1 md:flex-none">
+              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nuevo</span><span className="sm:hidden">+</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -277,7 +283,7 @@ export default function RecordsPage() {
       <div className="glass-panel flex-1 flex flex-col overflow-hidden">
         <div className="overflow-x-auto flex-1 custom-scrollbar">
           <table className="w-full text-xs md:text-sm text-left min-w-[800px]">
-            <thead className="text-[10px] md:text-xs uppercase bg-white/5 border-b border-white/10 sticky top-0 z-10 backdrop-blur-md">
+            <thead className="text-[10px] md:text-xs uppercase bg-[#0f1115] border-b border-white/10 sticky top-0 z-10">
               <tr>
                 <th 
                   className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
@@ -323,19 +329,17 @@ export default function RecordsPage() {
                     )}
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden lg:table-cell">Estado</th>
                 <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden xl:table-cell">Etiquetas</th>
-                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-white/50 text-sm">Cargando datos remotos de Google Sheets...</td>
+                  <td colSpan={5} className="text-center py-8 text-white/50 text-sm">Cargando datos remotos de Google Sheets...</td>
                 </tr>
               ) : displayedRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12">
+                  <td colSpan={5} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-white/50 text-base md:text-lg">No se encontraron registros</p>
                       {(searchTerm || startDate || endDate) && (
@@ -367,12 +371,6 @@ export default function RecordsPage() {
                     <td className={`px-3 md:px-6 py-3 md:py-4 font-semibold text-xs md:text-sm ${record.amount < 0 ? 'text-danger' : record.type === 'Ingreso' ? 'text-success' : ''}`}>
                       {record.amount < 0 ? '-' : ''}${Math.abs(record.amount).toLocaleString('es-CL')}
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 hidden lg:table-cell">
-                      <span className={`inline-flex items-center px-1.5 md:px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium border
-                        ${record.status === 'COMPLETED' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-warning/10 text-warning border-warning/20'}`}>
-                        {record.status === 'COMPLETED' ? 'Completado' : 'Pendiente'}
-                      </span>
-                    </td>
                     <td className="px-3 md:px-6 py-3 md:py-4 hidden xl:table-cell">
                       <div className="flex gap-1 flex-wrap">
                         {JSON.parse(record.tags).map((tag: string, i: number) => (
@@ -380,16 +378,6 @@ export default function RecordsPage() {
                             {tag}
                           </span>
                         ))}
-                      </div>
-                    </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 md:gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <button className="p-1 md:p-1.5 hover:bg-white/10 rounded-md text-white/60 hover:text-white transition-colors" title="Editar">
-                          <Edit className="w-3 h-3 md:w-4 md:h-4" />
-                        </button>
-                        <button className="p-1 md:p-1.5 hover:bg-danger/20 rounded-md text-white/60 hover:text-danger transition-colors" title="Eliminar">
-                          <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                        </button>
                       </div>
                     </td>
                   </tr>
