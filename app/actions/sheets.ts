@@ -4,6 +4,7 @@ import Papa from "papaparse";
 import { revalidatePath } from "next/cache";
 
 const SHEET_ID = "1YnLByK8mr5e-qtKsQxPKuirhxm-1J1QK4F4fxG2Yi3Q";
+const INSCRIPCIONES_ID = "1HO9s7tRtMleRpBPacaBizaGDOkAEWMaRnFOOLrjsF4o";
 const CAJA_CHICA_GID = "968865594"; 
 const FONDO_AHORRO_GID = process.env.FONDO_AHORRO_GID || "410879135"; 
 
@@ -262,6 +263,71 @@ export async function fetchRecordsData() {
     return allRecords;
   } catch (error) {
     console.error("Error al obtener SpreadSheet:", error);
+    return [];
+  }
+}
+
+export async function getInscripcionesSheets() {
+  try {
+    const { google } = await import("googleapis");
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
+
+    const sheets = google.sheets({ version: "v4", auth });
+    const spreadsheet = await sheets.spreadsheets.get({
+      spreadsheetId: INSCRIPCIONES_ID,
+    });
+
+    return spreadsheet.data.sheets?.map(s => s.properties?.title || "") || [];
+  } catch (error) {
+    console.error("Error fetching sheet list:", error);
+    return [];
+  }
+}
+
+export async function getInscripcionesData(sheetName: string) {
+  try {
+    // Usamos la API de consulta de visualización para obtener CSV por nombre de pestaña
+    const url = `https://docs.google.com/spreadsheets/d/${INSCRIPCIONES_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+    
+    const res = await fetch(url, { next: { revalidate: 0 }, cache: 'no-store' });
+    if (!res.ok) throw new Error(`No se pudo obtener la información: ${res.statusText}`);
+    
+    const csvText = await res.text();
+    // Quitamos comillas si existen al rededor de los valores (algunos parsers de Google las ponen)
+    const parsed = Papa.parse(csvText, { 
+      header: false, 
+      skipEmptyLines: "greedy" 
+    });
+    
+    if (!parsed.data || parsed.data.length === 0) return [];
+
+    const rows = parsed.data as string[][];
+    
+    // Detectar si la primera fila es encabezado (miramos si contiene palabras clave)
+    const firstRowStr = rows[0].join(" ").toLowerCase();
+    const headersKeys = ["apellido", "nombre", "fecha", "apoderado", "mail", "fono"];
+    const hasHeader = headersKeys.some(key => firstRowStr.includes(key));
+    
+    const startIndex = hasHeader ? 1 : 0;
+    
+    return rows.slice(startIndex).map((row, index) => ({
+      id: `${sheetName}-${index}`,
+      apellidoPaterno: row[0] || "",
+      apellidoMaterno: row[1] || "",
+      nombres: row[2] || "",
+      fecha: row[3] || "",
+      apoderado: row[4] || "",
+      mail: row[5] || "",
+      profesion: row[6] || "",
+      fono: row[7] || ""
+    })).filter(r => r.apellidoPaterno || r.nombres || r.apellidoMaterno);
+
+  } catch (error) {
+    console.error(`Error fetching data for sheet ${sheetName}:`, error);
     return [];
   }
 }
