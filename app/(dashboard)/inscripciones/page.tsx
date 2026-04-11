@@ -46,7 +46,15 @@ export default function InscripcionesPage() {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex-1">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">Inscripciones 2026</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">Inscripciones 2026</h1>
+            {!isLoadingData && students.length > 0 && (
+              <span className="bg-primary/20 text-primary text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full border border-primary/30 flex items-center gap-1.5 animate-in zoom-in duration-300">
+                <Users className="w-3 h-3" />
+                {students.length} Alumnos
+              </span>
+            )}
+          </div>
           <p className="text-white/60 text-sm md:text-base">Consulta las listas de alumnos inscritos por curso desde el documento oficial.</p>
         </div>
       </div>
@@ -96,15 +104,15 @@ export default function InscripcionesPage() {
 
       <div className="glass-panel flex-1 flex flex-col overflow-hidden shadow-2xl border-white/5">
         <div className="overflow-x-auto flex-1 custom-scrollbar">
-          <table className="w-full text-xs md:text-sm text-left min-w-[800px] md:min-w-[1000px]">
+          <table className="w-full text-xs md:text-sm text-left border-collapse">
             <thead className="text-[10px] md:text-xs uppercase bg-[#0f1115] border-b border-white/10 sticky top-0 z-20">
               <tr>
-                <th className="px-4 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider">Nombre Completo</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider">Nombre</th>
                 <th className="px-4 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider hidden sm:table-cell">Fecha</th>
-                <th className="px-4 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider">Apoderado</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider">Apoderado</th>
                 <th className="px-4 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider hidden lg:table-cell">Email</th>
-                <th className="px-4 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider hidden xl:table-cell">Profesión</th>
-                <th className="px-4 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider">Fono</th>
+                <th className="px-4 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider hidden xl:table-cell">Prof.</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 font-bold text-white/70 tracking-wider">Fono</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -133,30 +141,32 @@ export default function InscripcionesPage() {
               ) : (
                 filteredStudents.map((student) => (
                   <tr key={student.id} className="hover:bg-white/5 transition-all duration-200 group border-l-2 border-l-transparent hover:border-l-primary">
-                    <td className="px-4 md:px-6 py-4 md:py-5">
+                    <td className="px-3 md:px-6 py-3 md:py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-white text-sm md:text-base group-hover:text-primary transition-colors">
-                          {student.apellidoPaterno} {student.apellidoMaterno}
+                        <span className="font-bold text-white text-xs md:text-sm group-hover:text-primary transition-colors leading-tight">
+                          {student.apellidoPaterno}
                         </span>
-                        <span className="text-white/50 text-[10px] md:text-xs mt-0.5">
+                        <span className="text-white/50 text-[10px] md:text-xs">
                           {student.nombres}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 md:px-6 py-4 md:py-5 text-white/40 font-mono text-[10px] md:text-[11px] hidden sm:table-cell">{student.fecha}</td>
-                    <td className="px-4 md:px-6 py-4 md:py-5 font-semibold text-white/80 text-xs md:text-sm">{student.apoderado}</td>
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-white/80 text-[11px] md:text-sm leading-tight">
+                      {student.apoderado}
+                    </td>
                     <td className="px-4 md:px-6 py-4 md:py-5 hidden lg:table-cell">
                       {student.mail ? (
                         <a href={`mailto:${student.mail}`} className="text-primary hover:text-white transition-colors text-xs font-medium bg-primary/10 px-2 py-1 rounded border border-primary/20 truncate block max-w-[200px]" title={student.mail}>
                           {student.mail}
                         </a>
                       ) : (
-                        <span className="text-white/20 italic text-xs">Sin correo</span>
+                        <span className="text-white/20 italic text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 md:px-6 py-4 md:py-5 text-white/50 italic text-xs hidden xl:table-cell">{student.profesion || "—"}</td>
-                    <td className="px-4 md:px-6 py-4 md:py-5">
-                      <span className="text-accent font-mono font-bold tracking-tight text-xs md:text-sm">
+                    <td className="px-4 md:px-6 py-4 md:py-5 text-white/50 italic text-[10px] md:text-xs hidden xl:table-cell truncate max-w-[100px]">{student.profesion || "—"}</td>
+                    <td className="px-3 md:px-6 py-3 md:py-4">
+                      <span className="text-accent font-mono font-bold tracking-tight text-[10px] md:text-sm whitespace-nowrap">
                         {student.fono}
                       </span>
                     </td>
