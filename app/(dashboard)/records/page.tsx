@@ -282,54 +282,54 @@ export default function RecordsPage() {
       {/* Data Grid */}
       <div className="glass-panel flex-1 flex flex-col overflow-hidden">
         <div className="overflow-x-auto flex-1 custom-scrollbar">
-          <table className="w-full text-xs md:text-sm text-left min-w-[800px]">
+          <table className="w-full text-xs md:text-sm text-left border-collapse">
             <thead className="text-[10px] md:text-xs uppercase bg-[#0f1115] border-b border-white/10 sticky top-0 z-10">
               <tr>
                 <th 
-                  className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
                   onClick={() => handleSort("date")}
                 >
-                  <div className="flex items-center gap-1 md:gap-2">
+                  <div className="flex items-center gap-1">
                     Fecha
                     {sortField === "date" && (
-                      sortDirection === "asc" ? <ChevronUp className="w-3 h-3 md:w-4 md:h-4" /> : <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
+                      sortDirection === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                     )}
                   </div>
                 </th>
                 <th 
-                  className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
                   onClick={() => handleSort("description")}
                 >
-                  <div className="flex items-center gap-1 md:gap-2">
-                    Descripción
+                  <div className="flex items-center gap-1">
+                    Desc.
                     {sortField === "description" && (
-                      sortDirection === "asc" ? <ChevronUp className="w-3 h-3 md:w-4 md:h-4" /> : <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
+                      sortDirection === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                     )}
                   </div>
                 </th>
                 <th 
-                  className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
                   onClick={() => handleSort("type")}
                 >
-                  <div className="flex items-center gap-1 md:gap-2">
+                  <div className="flex items-center gap-1">
                     Tipo
                     {sortField === "type" && (
-                      sortDirection === "asc" ? <ChevronUp className="w-3 h-3 md:w-4 md:h-4" /> : <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
+                      sortDirection === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                     )}
                   </div>
                 </th>
                 <th 
-                  className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
                   onClick={() => handleSort("amount")}
                 >
-                  <div className="flex items-center gap-1 md:gap-2">
+                  <div className="flex items-center gap-1">
                     Monto
                     {sortField === "amount" && (
-                      sortDirection === "asc" ? <ChevronUp className="w-3 h-3 md:w-4 md:h-4" /> : <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
+                      sortDirection === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                     )}
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden xl:table-cell">Etiquetas</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden lg:table-cell">Etiquetas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -353,25 +353,27 @@ export default function RecordsPage() {
               ) : (
                 displayedRecords.map((record) => (
                   <tr key={record.id} className="hover:bg-white/5 transition-colors group">
-                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-white/80 text-xs md:text-sm">
-                      <span className="md:hidden">{format(record.date, "dd/MM/yy", { locale: es })}</span>
+                    <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-white/80 text-[10px] md:text-sm">
+                      <span className="md:hidden">{format(record.date, "dd/MM/yy")}</span>
                       <span className="hidden md:inline">{format(record.date, "dd MMM, yyyy", { locale: es })}</span>
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 font-medium max-w-[150px] md:max-w-none">
-                      <span className="truncate block" title={record.description}>
-                        {record.description || "Sin descripción"}
+                    <td className="px-2 md:px-6 py-3 md:py-4 font-medium max-w-[80px] md:max-w-none">
+                      <span className="truncate block text-[11px] md:text-sm" title={record.description}>
+                        {record.description || "—"}
                       </span>
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap
+                    <td className="px-2 md:px-6 py-3 md:py-4">
+                      <span className={`inline-flex items-center px-1.5 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-medium border whitespace-nowrap
                         ${record.type === 'Ingreso' ? 'bg-success/10 text-success border-success/20' : 'bg-danger/10 text-danger border-danger/20'}`}>
                         {record.type}
                       </span>
                     </td>
-                    <td className={`px-3 md:px-6 py-3 md:py-4 font-semibold text-xs md:text-sm ${record.amount < 0 ? 'text-danger' : record.type === 'Ingreso' ? 'text-success' : ''}`}>
-                      {record.amount < 0 ? '-' : ''}${Math.abs(record.amount).toLocaleString('es-CL')}
+                    <td className={`px-2 md:px-6 py-3 md:py-4 font-semibold text-[10px] md:text-sm ${record.amount < 0 ? 'text-danger' : record.type === 'Ingreso' ? 'text-success' : ''}`}>
+                      <span className="whitespace-nowrap">
+                        {record.amount < 0 ? '-' : ''}${Math.abs(record.amount).toLocaleString('es-CL')}
+                      </span>
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 hidden xl:table-cell">
+                    <td className="px-3 md:px-6 py-3 md:py-4 hidden lg:table-cell">
                       <div className="flex gap-1 flex-wrap">
                         {JSON.parse(record.tags).map((tag: string, i: number) => (
                           <span key={i} className="px-1.5 md:px-2 py-0.5 bg-white/10 rounded text-[9px] md:text-[10px] text-white/70">
