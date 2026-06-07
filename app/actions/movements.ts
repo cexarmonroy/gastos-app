@@ -8,6 +8,9 @@ import { labelToMovementType, toMovementRecord } from "@/lib/finance/map-movemen
 import { FUND_CODE_TO_TAB, ORG_SLUG, TAB_TO_FUND_CODE, type CategoryOption, type FundOption, type FundTab, type MovementRecord } from "@/lib/finance/types";
 import { prisma } from "@/lib/prisma";
 import { exportRecordToSheets } from "@/app/actions/sheets";
+import {
+  getDefaultCategoryCodeForEventMovement,
+} from "@/lib/finance/event-category";
 
 interface CreateMovementInput {
   date: string;
@@ -73,6 +76,31 @@ async function resolveCategoryId(
   });
 
   return fallback?.id ?? null;
+}
+
+async function resolveCategoryIdForMovement(
+  organizationId: string,
+  movementType: MovementType,
+  categoryId: string | null | undefined,
+  eventId: string | null
+) {
+  if (eventId) {
+    const code = getDefaultCategoryCodeForEventMovement(movementType);
+    const eventCategory = await prisma.category.findUnique({
+      where: {
+        organizationId_code: { organizationId, code },
+      },
+    });
+
+    const expectedType =
+      movementType === MovementType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
+
+    if (eventCategory?.type === expectedType) {
+      return eventCategory.id;
+    }
+  }
+
+  return resolveCategoryId(organizationId, movementType, categoryId);
 }
 
 async function resolveEventId(organizationId: string, eventId?: string | null) {
@@ -232,12 +260,17 @@ export async function createMovement(input: CreateMovementInput) {
       throw new Error(`Fondo ${fundCode} no encontrado.`);
     }
 
-    let categoryId = await resolveCategoryId(organizationId, movementType, input.categoryId);
     const resolvedEventId = await resolveEventId(organizationId, input.eventId);
     const resolvedProjectId = await resolveProjectId(
       organizationId,
       fundCode,
       input.projectId
+    );
+    const categoryId = await resolveCategoryIdForMovement(
+      organizationId,
+      movementType,
+      input.categoryId,
+      resolvedEventId
     );
 
     const movement = await prisma.movement.create({
@@ -329,12 +362,17 @@ export async function updateMovement(input: UpdateMovementInput) {
       throw new Error(`Fondo ${fundCode} no encontrado.`);
     }
 
-    const categoryId = await resolveCategoryId(organizationId, movementType, input.categoryId);
     const resolvedEventId = await resolveEventId(organizationId, input.eventId);
     const resolvedProjectId = await resolveProjectId(
       organizationId,
       fundCode,
       input.projectId
+    );
+    const categoryId = await resolveCategoryIdForMovement(
+      organizationId,
+      movementType,
+      input.categoryId,
+      resolvedEventId
     );
     const oldSnapshot = movementAuditSnapshot(existing);
 

@@ -6,6 +6,7 @@ import { X, Calendar as CalendarIcon, AlignLeft, DollarSign, PartyPopper, HardHa
 import { getEventOptions } from "@/app/actions/events";
 import { getProjectOptions } from "@/app/actions/projects";
 import { createMovement, getCategoryOptions, updateMovement } from "@/app/actions/movements";
+import { getDefaultCategoryCodeForMovementLabel } from "@/lib/finance/event-category";
 import { AttachmentPanel } from "@/components/ui/AttachmentPanel";
 import type { CategoryOption, EventOption, FundTab, MovementRecord, ProjectOption } from "@/lib/finance/types";
 
@@ -124,6 +125,13 @@ export function RecordModal({
       const next = { ...prev, [name]: value };
       if (name === "fund" && value !== "fondo_ahorro") {
         next.projectId = "";
+      }
+      if ((name === "eventId" && value) || (name === "type" && next.eventId)) {
+        const code = getDefaultCategoryCodeForMovementLabel(
+          (name === "type" ? value : next.type) as "Ingreso" | "Egreso"
+        );
+        const match = categories.find((cat) => cat.code === code);
+        if (match) next.categoryId = match.id;
       }
       return next;
     });

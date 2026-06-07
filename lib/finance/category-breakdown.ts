@@ -1,4 +1,5 @@
 import type { MovementRecord } from "./types";
+import { isTransferMovement } from "./categorization-quality";
 
 export interface CategoryBreakdownItem {
   categoryId: string | null;
@@ -13,6 +14,8 @@ export function buildCategoryBreakdown(records: MovementRecord[]): CategoryBreak
   const map = new Map<string, CategoryBreakdownItem>();
 
   for (const record of records) {
+    if (isTransferMovement(record)) continue;
+
     const key = record.categoryId ?? `unknown-${record.type}`;
     const existing = map.get(key);
 
