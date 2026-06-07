@@ -1,4 +1,5 @@
-import { getPublicProjectsSummary, getPublicTreasurySummary, isPublicPortalEnabled } from "@/app/actions/public-portal";
+import { getPublicProjectsSummary, getPublicTreasurySummary } from "@/app/actions/public-portal";
+import { isPublicPortalEnabled } from "@/lib/public-portal";
 import { PublicPortalView } from "@/components/portal/PublicPortalView";
 import Link from "next/link";
 

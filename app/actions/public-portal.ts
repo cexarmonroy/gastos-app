@@ -4,11 +4,8 @@ import { MovementType } from "@prisma/client";
 import { buildCategoryBreakdown } from "@/lib/finance/category-breakdown";
 import { FUND_CODE_TO_TAB, ORG_SLUG } from "@/lib/finance/types";
 import { toMovementRecord } from "@/lib/finance/map-movement";
+import { isPublicPortalEnabled } from "@/lib/public-portal";
 import { prisma } from "@/lib/prisma";
-
-export function isPublicPortalEnabled() {
-  return process.env.PUBLIC_PORTAL_ENABLED !== "false";
-}
 
 export async function getPublicTreasurySummary() {
   if (!isPublicPortalEnabled()) {

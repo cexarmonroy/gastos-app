@@ -6,6 +6,7 @@ import { es } from "date-fns/locale";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Download, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { getBase64ImageFromUrl } from "@/lib/pdf-utils";
 
 type Summary = NonNullable<Awaited<ReturnType<typeof import("@/app/actions/public-portal").getPublicTreasurySummary>>>;
@@ -100,10 +101,10 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
               <Download className="w-4 h-4" />
               {isExporting ? "Generando..." : "Descargar PDF"}
             </button>
-            <a href="/" className="btn-secondary flex items-center gap-2">
+            <Link href="/" className="btn-secondary flex items-center gap-2">
               Acceso tesoreros
               <ExternalLink className="w-4 h-4" />
-            </a>
+            </Link>
           </div>
         </header>
 
