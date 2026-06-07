@@ -382,6 +382,74 @@ export async function updateMovement(input: UpdateMovementInput) {
   }
 }
 
+export async function applyCategorySuggestion(movementId: string, categoryId: string) {
+  try {
+    const userId = await assertCanWrite();
+    const organizationId = await getOrganizationId();
+
+    const existing = await prisma.movement.findFirst({
+      where: { id: movementId, organizationId, deletedAt: null },
+      include: { fund: true, category: true, event: true, project: true },
+    });
+
+    if (!existing) {
+      throw new Error("Movimiento no encontrado.");
+    }
+
+    if (existing.transferId) {
+      throw new Error("Las transferencias no llevan categoría contable.");
+    }
+
+    const category = await prisma.category.findFirst({
+      where: { id: categoryId, organizationId, active: true },
+    });
+
+    if (!category) {
+      throw new Error("Categoría no encontrada.");
+    }
+
+    const expectedType =
+      existing.movementType === MovementType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
+
+    if (category.type !== expectedType) {
+      throw new Error("La categoría no corresponde al tipo de movimiento.");
+    }
+
+    const oldSnapshot = movementAuditSnapshot(existing);
+
+    const movement = await prisma.movement.update({
+      where: { id: movementId },
+      data: { categoryId, updatedById: userId },
+      include: { fund: true, category: true, event: true, project: true },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        organizationId,
+        userId,
+        action: AuditAction.UPDATE,
+        entity: "movements",
+        entityId: movement.id,
+        oldValues: oldSnapshot,
+        newValues: movementAuditSnapshot(movement),
+        metadata: { source: "category_suggestion" },
+      },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/records");
+    revalidatePath("/reports");
+
+    return { success: true as const, record: toMovementRecord(movement) };
+  } catch (error) {
+    console.error("Error applying category suggestion:", error);
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+}
+
 export async function voidMovement(id: string) {
   try {
     const userId = await assertCanWrite();

@@ -17,6 +17,7 @@ interface RecordModalProps {
   defaultEventId?: string;
   defaultProjectId?: string;
   defaultFund?: FundTab;
+  defaultType?: "Ingreso" | "Egreso";
 }
 
 export function RecordModal({
@@ -27,6 +28,7 @@ export function RecordModal({
   defaultEventId,
   defaultProjectId,
   defaultFund,
+  defaultType,
 }: RecordModalProps) {
   const { data: session } = useSession();
   const isAdminOrDirectiva =
@@ -64,7 +66,7 @@ export function RecordModal({
     } else {
       setFormData({
         amount: "",
-        type: "Ingreso",
+        type: defaultType ?? "Ingreso",
         description: "",
         fund: defaultFund ?? "caja_chica",
         categoryId: "",
@@ -73,7 +75,7 @@ export function RecordModal({
         date: new Date().toISOString().split("T")[0],
       });
     }
-  }, [isOpen, record, defaultEventId, defaultProjectId, defaultFund]);
+  }, [isOpen, record, defaultEventId, defaultProjectId, defaultFund, defaultType]);
 
   useEffect(() => {
     if (!isOpen) return;
