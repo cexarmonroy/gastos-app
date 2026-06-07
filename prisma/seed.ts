@@ -33,6 +33,7 @@ const CATEGORIES = [
   { code: "ALIMENTACION", name: "Colaciones", type: CategoryType.EXPENSE, sortOrder: 13 },
   { code: "MANTENCION", name: "Mantención", type: CategoryType.EXPENSE, sortOrder: 14 },
   { code: "INFRAESTRUCTURA", name: "Infraestructura", type: CategoryType.EXPENSE, sortOrder: 15 },
+  { code: "DONACION_GASTO", name: "Donación", type: CategoryType.EXPENSE, sortOrder: 16 },
   { code: "OTROS_GASTO", name: "Otros gastos", type: CategoryType.EXPENSE, sortOrder: 99 },
 ] as const;
 

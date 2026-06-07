@@ -29,6 +29,10 @@ const EXPENSE_RULES: Array<{ code: string; keywords: string[] }> = [
   },
   { code: "MANTENCION", keywords: ["mantencion", "mantención", "reparacion", "reparación", "arreglo"] },
   { code: "INFRAESTRUCTURA", keywords: ["infraestructura", "techo", "patio", "construccion", "construcción"] },
+  {
+    code: "DONACION_GASTO",
+    keywords: ["donacion", "donación", "donativo", "donativos", "donaciones", "aporte"],
+  },
 ];
 
 function normalizeText(value: string): string {
