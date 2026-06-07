@@ -7,10 +7,10 @@ export function Navbar() {
   const { data: session } = useSession();
 
   return (
-    <header className="h-16 md:h-20 border-b border-white/10 bg-background/50 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+    <header className="h-16 md:h-20 border-b border-white/10 bg-background/50 backdrop-blur-xl flex items-center justify-between pl-14 md:pl-8 pr-4 md:pr-8 sticky top-0 z-30">
       
-      <div className="flex items-center gap-2 md:gap-4 flex-1">
-        <div className="relative w-full md:w-96">
+      <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+        <div className="relative w-full md:w-96 hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
           <input 
             type="text" 

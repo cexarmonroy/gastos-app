@@ -2,24 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Plus, Search, Filter, Download, Edit, Trash2, ArrowUp, ArrowDown, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Search, Filter, Download, Edit, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { RecordModal } from "@/components/ui/RecordModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { fetchRecordsData } from "@/app/actions/sheets";
+import { fetchMovementsData, getAllCategoryOptions, voidMovement } from "@/app/actions/movements";
+import type { CategoryOption, MovementRecord } from "@/lib/finance/types";
 import { getBase64ImageFromUrl } from "@/lib/pdf-utils";
 
 type SortField = "date" | "description" | "type" | "amount";
 type SortDirection = "asc" | "desc";
 
+type RecordRow = Omit<MovementRecord, "date"> & { date: Date };
+
 export default function RecordsPage() {
   const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<MovementRecord | null>(null);
   const [activeTab, setActiveTab] = useState<"caja_chica" | "fondo_ahorro">("caja_chica");
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<RecordRow[]>([]);
+  const [allCategories, setAllCategories] = useState<CategoryOption[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -30,12 +36,18 @@ export default function RecordsPage() {
   const isAdminOrDirectiva = session?.user?.role === "ADMIN" || session?.user?.role === "DIRECTIVA";
 
   useEffect(() => {
-    fetchRecordsData().then(data => {
-      const parsed = data.map(d => ({ ...d, date: new Date(d.date) }));
+    loadRecords();
+    getAllCategoryOptions().then(setAllCategories);
+  }, []);
+
+  const loadRecords = () => {
+    setIsLoading(true);
+    fetchMovementsData().then((data) => {
+      const parsed = data.map((d) => ({ ...d, date: new Date(d.date) }));
       setRecords(parsed);
       setIsLoading(false);
     });
-  }, []);
+  };
 
   const handleExportPDF = async () => {
     const doc = new jsPDF();
@@ -57,13 +69,13 @@ export default function RecordsPage() {
     doc.setFont("helvetica", "normal");
     doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 40, 28);
     
-    const tableColumn = ["Fecha", "Descripción", "Tipo", "Monto", "Estado"];
+    const tableColumn = ["Fecha", "Descripción", "Categoría", "Tipo", "Monto"];
     const tableRows = filteredRecords.map(r => [
-      format(r.date, "dd/MM/yyyy"), 
-      r.description, 
-      r.type, 
-      `$${r.amount.toLocaleString('es-CL')}`, 
-      r.status === 'COMPLETED' ? 'Completado' : 'Pendiente'
+      format(r.date, "dd/MM/yyyy"),
+      r.description,
+      r.categoryName || "Sin categoría",
+      r.type,
+      `$${Math.abs(r.amount).toLocaleString('es-CL')}`,
     ]);
 
     autoTable(doc, {
@@ -73,12 +85,12 @@ export default function RecordsPage() {
       theme: 'grid',
       headStyles: { fillColor: [99, 102, 241] },
       didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 2) {
+        if (data.section === 'body' && data.column.index === 3) {
           const type = data.cell.raw as string;
           if (type === 'Ingreso') {
-            data.cell.styles.textColor = [34, 197, 94]; // Green color for Income
+            data.cell.styles.textColor = [34, 197, 94];
           } else if (type === 'Egreso') {
-            data.cell.styles.textColor = [239, 68, 68]; // Red color for Expense
+            data.cell.styles.textColor = [239, 68, 68];
           }
         }
       }
@@ -127,16 +139,36 @@ export default function RecordsPage() {
     });
   };
 
+  const handleVoid = async (record: MovementRecord) => {
+    if (!confirm(`¿Anular el movimiento "${record.description}"?`)) return;
+    const result = await voidMovement(record.id);
+    if (result.success) loadRecords();
+    else alert(result.error);
+  };
+
+  const openCreate = () => {
+    setEditingRecord(null);
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (record: RecordRow) => {
+    setEditingRecord({ ...record, date: record.date.toISOString() });
+    setIsModalOpen(true);
+  };
+
   const displayedRecords = sortRecords(
     records
       .filter(r => r.category === activeTab)
       .filter(r => {
-        // Filtro de búsqueda
-        if (searchTerm && !r.description.toLowerCase().includes(searchTerm.toLowerCase()) && 
-            !r.type.toLowerCase().includes(searchTerm.toLowerCase())) {
-          return false;
+        if (categoryFilter && r.categoryId !== categoryFilter) return false;
+        if (searchTerm) {
+          const q = searchTerm.toLowerCase();
+          const matches =
+            r.description.toLowerCase().includes(q) ||
+            r.type.toLowerCase().includes(q) ||
+            (r.categoryName?.toLowerCase().includes(q) ?? false);
+          if (!matches) return false;
         }
-        // Filtro de fechas
         if (startDate || endDate) {
           const recordDate = format(r.date, "yyyy-MM-dd");
           if (startDate && recordDate < startDate) return false;
@@ -173,7 +205,7 @@ export default function RecordsPage() {
             <button onClick={handleExportPDF} className="btn-secondary flex items-center justify-center gap-2 flex-1 md:flex-none">
               <Download className="w-4 h-4" /> <span className="hidden sm:inline">Exportar</span>
             </button>
-            <button onClick={() => setIsModalOpen(true)} className="btn-primary flex items-center justify-center gap-2 shadow-lg flex-1 md:flex-none">
+            <button onClick={openCreate} className="btn-primary flex items-center justify-center gap-2 shadow-lg flex-1 md:flex-none">
               <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nuevo</span><span className="sm:hidden">+</span>
             </button>
           </div>
@@ -217,11 +249,23 @@ export default function RecordsPage() {
           </div>
           
           <div className="flex items-center gap-2 w-full md:w-auto">
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="select-premium text-sm flex-1 md:flex-none md:min-w-[180px]"
+            >
+              <option value="">Todas las categorías</option>
+              {allCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
             <button 
               onClick={() => setShowDateFilter(!showDateFilter)}
-              className={`btn-secondary flex flex-1 md:flex-none items-center justify-center gap-2 ${showDateFilter ? 'bg-primary/20' : ''}`}
+              className={`btn-secondary flex flex-1 md:flex-none items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap ${showDateFilter ? 'bg-primary/20' : ''}`}
             >
-              <Filter className="w-4 h-4" /> Filtros de Fecha
+              <Filter className="w-4 h-4" /> <span className="hidden sm:inline">Filtros de </span>Fecha
             </button>
           </div>
         </div>
@@ -329,20 +373,23 @@ export default function RecordsPage() {
                     )}
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden lg:table-cell">Etiquetas</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden lg:table-cell">Categoría</th>
+                {isAdminOrDirectiva && (
+                  <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 text-right">Acciones</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-white/50 text-sm">Cargando datos remotos de Google Sheets...</td>
+                  <td colSpan={isAdminOrDirectiva ? 6 : 5} className="text-center py-8 text-white/50 text-sm">Cargando movimientos...</td>
                 </tr>
               ) : displayedRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-12">
+                  <td colSpan={isAdminOrDirectiva ? 6 : 5} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-white/50 text-base md:text-lg">No se encontraron registros</p>
-                      {(searchTerm || startDate || endDate) && (
+                      {(searchTerm || startDate || endDate || categoryFilter) && (
                         <p className="text-white/40 text-xs md:text-sm">
                           Intenta ajustar los filtros de búsqueda o fecha
                         </p>
@@ -374,14 +421,38 @@ export default function RecordsPage() {
                       </span>
                     </td>
                     <td className="px-3 md:px-6 py-3 md:py-4 hidden lg:table-cell">
-                      <div className="flex gap-1 flex-wrap">
-                        {JSON.parse(record.tags).map((tag: string, i: number) => (
-                          <span key={i} className="px-1.5 md:px-2 py-0.5 bg-white/10 rounded text-[9px] md:text-[10px] text-white/70">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                      {record.categoryName ? (
+                        <span className="px-1.5 md:px-2 py-0.5 bg-white/10 rounded text-[9px] md:text-[10px] text-white/70">
+                          {record.categoryName}
+                        </span>
+                      ) : (
+                        <span className="text-white/30 text-[10px]">—</span>
+                      )}
                     </td>
+                    {isAdminOrDirectiva && (
+                      <td className="px-3 md:px-6 py-3 md:py-4 text-right">
+                        {!record.transferId ? (
+                          <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100">
+                            <button
+                              onClick={() => openEdit(record)}
+                              className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-primary"
+                              title="Editar"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleVoid(record)}
+                              className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-danger"
+                              title="Anular"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-white/30">Transferencia</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -398,7 +469,12 @@ export default function RecordsPage() {
           </div>
         </div>
       </div>
-      <RecordModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <RecordModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setEditingRecord(null); }}
+        onSaved={loadRecords}
+        record={editingRecord}
+      />
     </div>
   );
 }

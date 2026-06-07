@@ -7,11 +7,15 @@ export default withAuth({
   callbacks: {
     authorized: ({ token, req }) => {
       const { pathname } = req.nextUrl;
-      
+
+      if (pathname.startsWith("/portal")) {
+        return true;
+      }
+
       if (!token) return false;
 
       // Rutas restringidas
-  const restrictedRoutes = ["/reports"];
+      const restrictedRoutes = ["/reports", "/reconciliation", "/transfers", "/audit"];
       const isRestricted = restrictedRoutes.some(route => pathname.startsWith(route));
 
       if (isRestricted) {

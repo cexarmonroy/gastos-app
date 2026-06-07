@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, Settings, PieChart, Users, X, Menu } from "lucide-react";
+import { LayoutDashboard, Receipt, PieChart, Users, X, Menu, ArrowRightLeft, Scale, Shield, PartyPopper, HardHat, Globe } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
 
@@ -12,8 +12,12 @@ const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["ADMIN", "USER", "DIRECTIVA"] },
   { href: "/inscripciones", icon: Users, label: "Inscripciones 2026", roles: ["ADMIN", "USER", "DIRECTIVA"] },
   { href: "/records", icon: Receipt, label: "Registros", roles: ["ADMIN", "USER", "DIRECTIVA"] },
+  { href: "/events", icon: PartyPopper, label: "Actividades", roles: ["ADMIN", "USER", "DIRECTIVA"] },
+  { href: "/projects", icon: HardHat, label: "Proyectos", roles: ["ADMIN", "USER", "DIRECTIVA"] },
+  { href: "/transfers", icon: ArrowRightLeft, label: "Transferencias", roles: ["ADMIN", "DIRECTIVA"] },
   { href: "/reports", icon: PieChart, label: "Reportes", roles: ["ADMIN", "DIRECTIVA"] },
-  { href: "/settings", icon: Settings, label: "Configuración", roles: ["ADMIN", "DIRECTIVA"] },
+  { href: "/reconciliation", icon: Scale, label: "Conciliación", roles: ["ADMIN", "DIRECTIVA"] },
+  { href: "/audit", icon: Shield, label: "Auditoría", roles: ["ADMIN", "DIRECTIVA"] },
 ];
 
 export function Sidebar() {
@@ -71,12 +75,22 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-3 md:p-4 m-2 md:m-4 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-white/5 hidden md:block">
-        <p className="text-xs text-white/60 mb-2">Espacio de uso</p>
-        <div className="w-full bg-black/40 rounded-full h-1.5 mb-1">
-          <div className="bg-gradient-to-r from-primary to-accent h-1.5 rounded-full w-1/4" />
+      <div className="p-3 md:p-4 m-2 md:m-4 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-white/5 hidden md:block space-y-3">
+        <Link
+          href="/portal"
+          target="_blank"
+          className="flex items-center gap-2 text-xs text-white/70 hover:text-white transition-colors"
+        >
+          <Globe className="w-4 h-4 text-primary" />
+          Portal público
+        </Link>
+        <div>
+          <p className="text-xs text-white/60 mb-2">Espacio de uso</p>
+          <div className="w-full bg-black/40 rounded-full h-1.5 mb-1">
+            <div className="bg-gradient-to-r from-primary to-accent h-1.5 rounded-full w-1/4" />
+          </div>
+          <p className="text-[10px] text-white/40 text-right">25% utilizado</p>
         </div>
-        <p className="text-[10px] text-white/40 text-right">25% utilizado</p>
       </div>
     </>
   );

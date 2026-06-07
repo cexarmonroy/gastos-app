@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Loader2, Users, Download, ChevronRight } from "lucide-react";
+import { Search, Loader2, Users, Download } from "lucide-react";
 import { getInscripcionesSheets, getInscripcionesData } from "@/app/actions/sheets";
 
 export default function InscripcionesPage() {
@@ -72,17 +72,13 @@ export default function InscripcionesPage() {
                 <select 
                   value={selectedSheet}
                   onChange={(e) => setSelectedSheet(e.target.value)}
-                  className="input-premium appearance-none cursor-pointer pr-10 focus:ring-2 focus:ring-primary/50"
-                  style={{ colorScheme: 'dark' }}
+                  className="select-premium"
                 >
                   {sheets.map(s => (
-                    <option key={s} value={s} className="bg-[#121214] text-white py-2">{s}</option>
+                    <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               )}
-              {!isLoadingSheets && <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
-                <ChevronRight className="w-4 h-4 rotate-90" />
-              </div>}
             </div>
           </div>
 

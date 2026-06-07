@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { ArrowUpRight, ArrowDownRight, Activity, Wallet, PiggyBank, Briefcase, RefreshCw, Info } from "lucide-react";
-import { fetchRecordsData } from "@/app/actions/sheets";
+import { fetchMovementsData } from "@/app/actions/movements";
+import { buildCategoryBreakdown } from "@/lib/finance/category-breakdown";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -19,7 +20,7 @@ export default function DashboardPage() {
     try {
       if (isRefresh) setIsRefreshing(true);
       setError(null);
-      const data = await fetchRecordsData();
+      const data = await fetchMovementsData();
       setRecords(data);
       setLastUpdate(new Date());
     } catch (err) {
@@ -46,6 +47,13 @@ export default function DashboardPage() {
     .reduce((acc, r) => acc + r.amount, 0);
 
   const saldoTotal = totalCajaChica + totalFondoAhorro;
+
+  const expenseBreakdown = buildCategoryBreakdown(
+    records.filter((r) => r.type === "Egreso")
+  ).slice(0, 5);
+  const incomeBreakdown = buildCategoryBreakdown(
+    records.filter((r) => r.type === "Ingreso")
+  ).slice(0, 5);
   
   // Calcular total de egresos: usar valor absoluto para que siempre sea positivo
   const totalEgresos = records.reduce((acc, r) => {
@@ -70,14 +78,14 @@ export default function DashboardPage() {
       title: "Caja Chica",
       amount: isLoading ? "Cargando..." : formatM(totalCajaChica),
       icon: <Briefcase className="w-6 h-6 text-success" />,
-      trend: "Desde GSheet",
+      trend: "Desde BD",
       isPositive: true,
     },
     {
       title: "Fondo de Ahorro",
       amount: isLoading ? "Cargando..." : formatM(totalFondoAhorro),
       icon: <PiggyBank className="w-6 h-6 text-accent" />,
-      trend: "Desde GSheet",
+      trend: "Desde BD",
       isPositive: true,
     },
     {
@@ -120,7 +128,7 @@ export default function DashboardPage() {
       <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">Tesorería Centro de Padres</h1>
-          <p className="text-white/60 text-sm md:text-base">Resumen general de la situación financiera y distribución de fondos.</p>
+          <p className="text-white/60 text-sm md:text-base">Resumen general de la situación financiera y distribución de fondos</p>
           {lastUpdate && (
             <p className="text-white/40 text-xs md:text-sm mt-1">
               Última actualización: {format(lastUpdate, "dd/MM/yyyy HH:mm", { locale: es })}
@@ -209,6 +217,45 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {!isLoading && records.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="glass-panel p-4 md:p-6">
+            <h3 className="text-lg font-semibold mb-4">Top Ingresos por Categoría</h3>
+            <div className="space-y-3">
+              {incomeBreakdown.length === 0 ? (
+                <p className="text-white/40 text-sm">Sin datos</p>
+              ) : (
+                incomeBreakdown.map((item) => (
+                  <div key={item.categoryId ?? item.categoryName} className="flex justify-between items-center text-sm">
+                    <span className="text-white/70">{item.categoryName}</span>
+                    <span className="text-success font-semibold font-mono">
+                      ${item.total.toLocaleString("es-CL")}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="glass-panel p-4 md:p-6">
+            <h3 className="text-lg font-semibold mb-4">Top Gastos por Categoría</h3>
+            <div className="space-y-3">
+              {expenseBreakdown.length === 0 ? (
+                <p className="text-white/40 text-sm">Sin datos</p>
+              ) : (
+                expenseBreakdown.map((item) => (
+                  <div key={item.categoryId ?? item.categoryName} className="flex justify-between items-center text-sm">
+                    <span className="text-white/70">{item.categoryName}</span>
+                    <span className="text-danger font-semibold font-mono">
+                      ${item.total.toLocaleString("es-CL")}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Charts / Tables Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         
@@ -216,8 +263,8 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 glass-panel p-4 md:p-6 flex flex-col min-h-[300px] md:min-h-[400px]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 md:mb-6">
             <h3 className="text-lg md:text-xl font-semibold">Análisis de Flujo</h3>
-            <select className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs md:text-sm text-white/80 focus:outline-none focus:border-primary transition-colors w-full sm:w-auto">
-              <option className="bg-secondary text-white">Todos los tiempos</option>
+            <select className="select-premium py-1.5 text-xs md:text-sm w-full sm:w-auto sm:min-w-[160px]">
+              <option value="all">Todos los tiempos</option>
             </select>
           </div>
           <div className="flex-1 w-full relative min-h-[250px] md:min-h-[300px]">

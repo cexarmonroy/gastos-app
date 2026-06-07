@@ -7,10 +7,17 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "import:sheets": "npx tsx scripts/import-from-sheets.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "@supabase/supabase-js": "^2.107.0",
     "@tanstack/react-table": "^8.21.3",
     "@types/papaparse": "^5.5.2",
     "bcryptjs": "^3.0.3",

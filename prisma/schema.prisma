@@ -13,23 +13,258 @@ enum Role {
   DIRECTIVA
 }
 
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
+enum MovementType {
+  INCOME
+  EXPENSE
+}
+
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  EXPORT
+  IMPORT
+}
+
+enum AttachmentType {
+  RECEIPT
+  INVOICE
+  TRANSFER
+  QUOTE
+  OTHER
+}
+
+enum ReconciliationStatus {
+  MATCH
+  MISMATCH
+  PENDING
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  funds              Fund[]
+  categories         Category[]
+  movements          Movement[]
+  transfers          Transfer[]
+  events             FundraisingEvent[]
+  projects           Project[]
+  members            OrganizationMember[]
+  auditLogs          AuditLog[]
+  reconciliationLogs ReconciliationLog[]
+  attachments        Attachment[]
+}
+
+model OrganizationMember {
+  id             String @id @default(uuid())
+  organizationId String
+  userId         String
+  role           Role   @default(USER)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+}
+
 model User {
   id       String @id @default(uuid())
   email    String @unique
   password String
   role     Role   @default(USER)
+
+  memberships      OrganizationMember[]
+  movementsCreated Movement[] @relation("MovementCreatedBy")
+  movementsUpdated Movement[] @relation("MovementUpdatedBy")
+  transfersCreated Transfer[] @relation("TransferCreatedBy")
+  auditLogs        AuditLog[]
+  attachments      Attachment[]
 }
 
-model Record {
-  id          String   @id @default(uuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  date        DateTime
-  amount      Float
-  type        String
-  description String?
-  
-  status      String   @default("COMPLETED")
-  tags        String   @default("[]")
+model Fund {
+  id             String  @id @default(uuid())
+  organizationId String
+  code           String
+  name           String
+  description    String?
+  active         Boolean @default(true)
+  sortOrder      Int     @default(0)
+
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  movements          Movement[]
+  transfersFrom      Transfer[]          @relation("TransferFrom")
+  transfersTo        Transfer[]          @relation("TransferTo")
+  reconciliationLogs ReconciliationLog[]
+
+  @@unique([organizationId, code])
+}
+
+model Category {
+  id             String       @id @default(uuid())
+  organizationId String
+  code           String
+  name           String
+  type           CategoryType
+  active         Boolean      @default(true)
+  sortOrder      Int          @default(0)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  movements    Movement[]
+
+  @@unique([organizationId, code])
+}
+
+model Movement {
+  id             String       @id @default(uuid())
+  organizationId String
+  date           DateTime     @db.Date
+  amount         Decimal      @db.Decimal(14, 2)
+  movementType   MovementType
+  description    String?
+  fundId         String
+  categoryId     String?
+  eventId        String?
+  projectId      String?
+  transferId     String?
+  externalRef    String?
+
+  createdById String?
+  updatedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fund         Fund              @relation(fields: [fundId], references: [id])
+  category     Category?         @relation(fields: [categoryId], references: [id])
+  event        FundraisingEvent? @relation(fields: [eventId], references: [id])
+  project      Project?          @relation(fields: [projectId], references: [id])
+  transfer     Transfer?         @relation(fields: [transferId], references: [id])
+  createdBy    User?             @relation("MovementCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User?             @relation("MovementUpdatedBy", fields: [updatedById], references: [id])
+  attachments  Attachment[]
+
+  @@unique([organizationId, externalRef])
+  @@index([organizationId, fundId, date])
+  @@index([date])
+  @@index([deletedAt])
+}
+
+model Transfer {
+  id             String   @id @default(uuid())
+  organizationId String
+  fromFundId     String
+  toFundId       String
+  amount         Decimal  @db.Decimal(14, 2)
+  date           DateTime @db.Date
+  description    String?
+  createdById    String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fromFund     Fund         @relation("TransferFrom", fields: [fromFundId], references: [id])
+  toFund       Fund         @relation("TransferTo", fields: [toFundId], references: [id])
+  createdBy    User?        @relation("TransferCreatedBy", fields: [createdById], references: [id])
+  movements    Movement[]
+
+  @@index([organizationId, date])
+}
+
+model FundraisingEvent {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  date           DateTime @db.Date
+  goal           Decimal? @db.Decimal(14, 2)
+  description    String?
+  projectId      String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project?     @relation(fields: [projectId], references: [id])
+  movements    Movement[]
+}
+
+model Project {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String
+  targetAmount   Decimal       @db.Decimal(14, 2)
+  status         ProjectStatus @default(PLANNED)
+  description    String?
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  movements    Movement[]
+  events       FundraisingEvent[]
+}
+
+model AuditLog {
+  id             String      @id @default(uuid())
+  organizationId String
+  userId         String?
+  action         AuditAction
+  entity         String
+  entityId       String
+  oldValues      Json?
+  newValues      Json?
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+model ReconciliationLog {
+  id             String               @id @default(uuid())
+  organizationId String
+  fundId         String
+  sheetBalance   Decimal              @db.Decimal(14, 2)
+  dbBalance      Decimal              @db.Decimal(14, 2)
+  delta          Decimal              @db.Decimal(14, 2)
+  status         ReconciliationStatus
+  notes          String?
+  createdAt      DateTime             @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fund           Fund         @relation(fields: [fundId], references: [id])
+
+  @@index([organizationId, fundId, createdAt])
+}
+
+model Attachment {
+  id             String         @id @default(uuid())
+  organizationId String
+  movementId     String
+  fileName       String
+  storagePath    String
+  mimeType       String
+  fileSize       Int
+  attachmentType AttachmentType @default(OTHER)
+  uploadedById   String?
+  createdAt      DateTime       @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  movement     Movement     @relation(fields: [movementId], references: [id], onDelete: Cascade)
+  uploadedBy   User?        @relation(fields: [uploadedById], references: [id])
+
+  @@index([movementId])
+  @@index([organizationId, createdAt])
 }
