@@ -886,18 +886,36 @@ export default function ReportsPage() {
                           <p className="font-medium text-sm md:text-base">{project.name}</p>
                           <div className="mt-2 grid grid-cols-3 gap-3 text-xs md:text-sm">
                             <div>
-                              <p className="text-white/50">Meta</p>
+                              <p className="text-white/50">
+                                {project.fundingMode === "EXECUTION" ? "Presupuesto" : "Meta"}
+                              </p>
                               <p className="font-mono">${project.targetAmount.toLocaleString("es-CL")}</p>
                             </div>
                             <div>
-                              <p className="text-white/50">Ingresos</p>
-                              <p className="text-success font-mono">
-                                ${project.totalIncome.toLocaleString("es-CL")}
+                              <p className="text-white/50">
+                                {project.fundingMode === "EXECUTION" ? "Gastos" : "Ingresos"}
+                              </p>
+                              <p
+                                className={`font-mono ${
+                                  project.fundingMode === "EXECUTION" ? "text-danger" : "text-success"
+                                }`}
+                              >
+                                $
+                                {(project.fundingMode === "EXECUTION"
+                                  ? project.totalExpense
+                                  : project.totalIncome
+                                ).toLocaleString("es-CL")}
                               </p>
                             </div>
                             <div>
-                              <p className="text-white/50">Avance</p>
-                              <p className="font-mono text-accent">{project.progress}%</p>
+                              <p className="text-white/50">
+                                {project.fundingMode === "EXECUTION" ? "Ejecutado" : "Avance"}
+                              </p>
+                              <p className="font-mono text-accent">
+                                {project.fundingMode === "EXECUTION"
+                                  ? `${project.executionProgress ?? 0}%`
+                                  : `${project.progress ?? 0}%`}
+                              </p>
                             </div>
                           </div>
                         </div>

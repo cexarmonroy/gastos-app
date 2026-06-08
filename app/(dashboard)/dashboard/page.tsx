@@ -122,9 +122,10 @@ export default function DashboardPage() {
   const balanceChartData = useMemo(() => buildBalanceChartData(records), [records]);
 
   const priorityProject = useMemo(() => {
-    const active = projects.filter((p) => p.status === "IN_PROGRESS");
-    const pool = active.length > 0 ? active : projects.filter((p) => p.status === "PLANNED");
-    if (pool.length === 0) return projects[0] ?? null;
+    const fundraising = projects.filter((p) => p.fundingMode === "FUNDRAISING");
+    const active = fundraising.filter((p) => p.status === "IN_PROGRESS");
+    const pool = active.length > 0 ? active : fundraising.filter((p) => p.status === "PLANNED");
+    if (pool.length === 0) return fundraising[0] ?? null;
     return pool.reduce((best, current) =>
       current.targetAmount > best.targetAmount ? current : best
     );
@@ -350,21 +351,39 @@ export default function DashboardPage() {
               </div>
               <p className="text-xl font-bold mb-1">{priorityProject.name}</p>
               <p className="text-white/50 text-sm mb-4">
-                Meta: {formatM(priorityProject.targetAmount)}
+                {priorityProject.fundingMode === "EXECUTION" ? "Presupuesto" : "Meta"}:{" "}
+                {formatM(priorityProject.targetAmount)}
               </p>
               <div className="mb-2 flex justify-between text-sm">
-                <span className="text-white/60">Avance</span>
-                <span className="font-semibold">{priorityProject.progress}%</span>
+                <span className="text-white/60">
+                  {priorityProject.fundingMode === "EXECUTION" ? "Ejecutado" : "Avance"}
+                </span>
+                <span className="font-semibold">
+                  {priorityProject.fundingMode === "EXECUTION"
+                    ? `${priorityProject.executionProgress ?? 0}%`
+                    : `${priorityProject.progress ?? 0}%`}
+                </span>
               </div>
               <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-3">
                 <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${Math.min(100, priorityProject.progress)}%` }}
+                  className={`h-full rounded-full transition-all ${
+                    priorityProject.fundingMode === "EXECUTION" ? "bg-danger" : "bg-primary"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      priorityProject.fundingMode === "EXECUTION"
+                        ? (priorityProject.executionProgress ?? 0)
+                        : (priorityProject.progress ?? 0)
+                    )}%`,
+                  }}
                 />
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-white/60">
-                  Actual: {formatM(priorityProject.totalIncome)}
+                  {priorityProject.fundingMode === "EXECUTION"
+                    ? `Gastado: ${formatM(priorityProject.totalExpense)}`
+                    : `Actual: ${formatM(priorityProject.totalIncome)}`}
                 </span>
                 <Link href={`/projects/${priorityProject.id}`} className="text-primary hover:underline">
                   Ver proyecto →

@@ -1,7 +1,7 @@
 "use server";
 
-import { MovementType } from "@prisma/client";
 import { buildCategoryBreakdown } from "@/lib/finance/category-breakdown";
+import { computeProjectKpis } from "@/lib/finance/project-stats";
 import { FUND_CODE_TO_TAB, ORG_SLUG } from "@/lib/finance/types";
 import { toMovementRecord } from "@/lib/finance/map-movement";
 import { isPublicPortalEnabled } from "@/lib/public-portal";
@@ -123,25 +123,19 @@ export async function getPublicProjectsSummary() {
   });
 
   return projects.map((project) => {
-    const totalIncome = project.movements
-      .filter((movement) => movement.movementType === MovementType.INCOME)
-      .reduce((sum, movement) => sum + Number(movement.amount), 0);
-
-    const totalExpense = project.movements
-      .filter((movement) => movement.movementType === MovementType.EXPENSE)
-      .reduce((sum, movement) => sum + Number(movement.amount), 0);
-
     const target = Number(project.targetAmount);
-    const progress = target > 0 ? Math.min(100, Math.round((totalIncome / target) * 100)) : 0;
+    const kpis = computeProjectKpis(project.movements, target, project.fundingMode);
 
     return {
       name: project.name,
       status: project.status,
+      fundingMode: project.fundingMode,
       targetAmount: target,
-      totalIncome,
-      totalExpense,
-      balance: totalIncome - totalExpense,
-      progress,
+      totalIncome: kpis.totalIncome,
+      totalExpense: kpis.totalExpense,
+      balance: kpis.balance,
+      progress: kpis.progress,
+      executionProgress: kpis.executionProgress,
     };
   });
 }

@@ -67,12 +67,14 @@ export interface EventSummary {
 }
 
 export type ProjectStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+export type ProjectFundingMode = "FUNDRAISING" | "EXECUTION";
 
 export interface ProjectOption {
   id: string;
   name: string;
   targetAmount: number;
   status: ProjectStatus;
+  fundingMode: ProjectFundingMode;
 }
 
 export interface ProjectSummary {
@@ -81,9 +83,11 @@ export interface ProjectSummary {
   description: string | null;
   targetAmount: number;
   status: ProjectStatus;
+  fundingMode: ProjectFundingMode;
   totalIncome: number;
   totalExpense: number;
   balance: number;
   movementCount: number;
-  progress: number;
+  progress: number | null;
+  executionProgress: number | null;
 }

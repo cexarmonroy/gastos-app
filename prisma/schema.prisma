@@ -30,6 +30,11 @@ enum ProjectStatus {
   CANCELLED
 }
 
+enum ProjectFundingMode {
+  FUNDRAISING
+  EXECUTION
+}
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -201,11 +206,12 @@ model FundraisingEvent {
 }
 
 model Project {
-  id             String        @id @default(uuid())
+  id             String             @id @default(uuid())
   organizationId String
   name           String
-  targetAmount   Decimal       @db.Decimal(14, 2)
-  status         ProjectStatus @default(PLANNED)
+  targetAmount   Decimal            @db.Decimal(14, 2)
+  status         ProjectStatus      @default(PLANNED)
+  fundingMode    ProjectFundingMode   @default(FUNDRAISING)
   description    String?
 
   organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)

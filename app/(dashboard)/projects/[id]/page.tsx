@@ -9,7 +9,11 @@ import { ArrowLeft, Plus, Pencil, Target, TrendingUp, TrendingDown } from "lucid
 import { getProjectDetail } from "@/app/actions/projects";
 import { ProjectModal } from "@/components/ui/ProjectModal";
 import { RecordModal } from "@/components/ui/RecordModal";
-import { PROJECT_STATUS_LABELS } from "@/lib/finance/project-labels";
+import {
+  ProjectFundingBadge,
+  ProjectFundingSummary,
+} from "@/components/projects/ProjectFundingSummary";
+import { isFundraisingProject, PROJECT_STATUS_LABELS } from "@/lib/finance/project-labels";
 import type { MovementRecord, ProjectSummary } from "@/lib/finance/types";
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -77,6 +81,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <span className="text-xs px-2 py-1 rounded-full bg-accent/20 text-accent border border-accent/30">
               {PROJECT_STATUS_LABELS[project.status]}
             </span>
+            <span className="text-xs px-2 py-1 rounded-full bg-white/5 text-white/60 border border-white/10">
+              <ProjectFundingBadge fundingMode={project.fundingMode} />
+            </span>
           </div>
           {project.description && (
             <p className="text-white/60 text-sm">{project.description}</p>
@@ -103,23 +110,30 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="glass-panel p-5 mb-6">
-        <div className="flex justify-between items-end mb-2">
-          <div>
-            <p className="text-white/50 text-sm">Avance hacia la meta</p>
-            <p className="text-3xl font-bold text-accent">{project.progress}%</p>
-          </div>
-          <div className="text-right text-sm">
-            <p className="text-white/50">
-              {formatMoney(project.totalIncome)} de {formatMoney(project.targetAmount)}
-            </p>
-          </div>
-        </div>
-        <div className="h-3 bg-white/10 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-accent to-primary rounded-full transition-all duration-500"
-            style={{ width: `${project.progress}%` }}
-          />
-        </div>
+        <p className="text-white/50 text-sm mb-1">
+          {isFundraisingProject(project.fundingMode)
+            ? "Avance hacia la meta"
+            : "Ejecución del presupuesto"}
+        </p>
+        <p
+          className={`text-3xl font-bold mb-4 ${
+            isFundraisingProject(project.fundingMode) ? "text-accent" : "text-danger"
+          }`}
+        >
+          {isFundraisingProject(project.fundingMode)
+            ? `${project.progress ?? 0}%`
+            : `${project.executionProgress ?? 0}%`}
+        </p>
+        <ProjectFundingSummary
+          fundingMode={project.fundingMode}
+          targetAmount={project.targetAmount}
+          totalIncome={project.totalIncome}
+          totalExpense={project.totalExpense}
+          progress={project.progress}
+          executionProgress={project.executionProgress}
+          formatMoney={formatMoney}
+          compact
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -160,7 +174,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {project.movements.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-10 text-white/40">
-                    Vincula ingresos del Fondo de Ahorro para avanzar hacia la meta.
+                    {isFundraisingProject(project.fundingMode)
+                      ? "Vincula ingresos del Fondo de Ahorro para avanzar hacia la meta."
+                      : "Vincula egresos del Fondo de Ahorro para registrar la inversión."}
                   </td>
                 </tr>
               ) : (

@@ -1,4 +1,5 @@
 import { MovementType } from "@prisma/client";
+import type { ProjectFundingMode } from "./types";
 
 export interface ProjectKpis {
   totalIncome: number;
@@ -6,7 +7,8 @@ export interface ProjectKpis {
   balance: number;
   movementCount: number;
   targetAmount: number;
-  progress: number;
+  progress: number | null;
+  executionProgress: number | null;
 }
 
 interface MovementLike {
@@ -14,9 +16,20 @@ interface MovementLike {
   movementType: MovementType;
 }
 
+function computeFundraisingProgress(totalIncome: number, targetAmount: number): number {
+  if (targetAmount <= 0) return 0;
+  return Math.min(100, Math.round((totalIncome / targetAmount) * 100));
+}
+
+function computeExecutionProgress(totalExpense: number, targetAmount: number): number {
+  if (targetAmount <= 0) return 0;
+  return Math.min(100, Math.round((totalExpense / targetAmount) * 100));
+}
+
 export function computeProjectKpis(
   movements: MovementLike[],
-  targetAmount: number
+  targetAmount: number,
+  fundingMode: ProjectFundingMode = "FUNDRAISING"
 ): ProjectKpis {
   let totalIncome = 0;
   let totalExpense = 0;
@@ -32,8 +45,18 @@ export function computeProjectKpis(
   }
 
   const balance = totalIncome - totalExpense;
-  const progress =
-    targetAmount > 0 ? Math.min(100, Math.round((totalIncome / targetAmount) * 100)) : 0;
+
+  if (fundingMode === "EXECUTION") {
+    return {
+      totalIncome,
+      totalExpense,
+      balance,
+      movementCount: movements.length,
+      targetAmount,
+      progress: null,
+      executionProgress: computeExecutionProgress(totalExpense, targetAmount),
+    };
+  }
 
   return {
     totalIncome,
@@ -41,6 +64,7 @@ export function computeProjectKpis(
     balance,
     movementCount: movements.length,
     targetAmount,
-    progress,
+    progress: computeFundraisingProgress(totalIncome, targetAmount),
+    executionProgress: null,
   };
 }

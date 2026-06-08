@@ -6,6 +6,11 @@ import Link from "next/link";
 import { Plus, HardHat } from "lucide-react";
 import { fetchProjects } from "@/app/actions/projects";
 import { ProjectModal } from "@/components/ui/ProjectModal";
+import {
+  ProjectFundingBadge,
+  ProjectFundingHeadline,
+  ProjectFundingSummary,
+} from "@/components/projects/ProjectFundingSummary";
 import { PROJECT_STATUS_LABELS } from "@/lib/finance/project-labels";
 import type { ProjectSummary } from "@/lib/finance/types";
 
@@ -38,7 +43,7 @@ export default function ProjectsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Proyectos</h1>
           <p className="text-white/60 text-sm md:text-base">
-            Metas de inversión del Fondo de Ahorro con seguimiento de avance.
+            Inversiones del Fondo de Ahorro: con recaudación o ejecución con saldo acumulado.
           </p>
         </div>
         {canManage && (
@@ -77,25 +82,30 @@ export default function ProjectsPage() {
                   <h3 className="font-bold text-lg group-hover:text-accent transition-colors">
                     {project.name}
                   </h3>
-                  <span className="text-[10px] uppercase tracking-wider text-white/40">
-                    {PROJECT_STATUS_LABELS[project.status]}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] uppercase tracking-wider text-white/40">
+                      {PROJECT_STATUS_LABELS[project.status]}
+                    </span>
+                    <ProjectFundingBadge fundingMode={project.fundingMode} />
+                  </div>
                 </div>
-                <span className="text-sm font-bold text-accent">{project.progress}%</span>
+                <ProjectFundingHeadline
+                  fundingMode={project.fundingMode}
+                  progress={project.progress}
+                  executionProgress={project.executionProgress}
+                />
               </div>
 
-              <div className="mb-4">
-                <div className="flex justify-between text-[10px] text-white/40 mb-1">
-                  <span>Asignado: {formatMoney(project.totalIncome)}</span>
-                  <span>Meta: {formatMoney(project.targetAmount)}</span>
-                </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-accent to-primary rounded-full"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-              </div>
+              <ProjectFundingSummary
+                fundingMode={project.fundingMode}
+                targetAmount={project.targetAmount}
+                totalIncome={project.totalIncome}
+                totalExpense={project.totalExpense}
+                progress={project.progress}
+                executionProgress={project.executionProgress}
+                formatMoney={formatMoney}
+                compact
+              />
 
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 <div className="bg-success/10 rounded-lg p-2 border border-success/20">

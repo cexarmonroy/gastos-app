@@ -169,24 +169,37 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
           <div className="glass-panel p-5 mb-8">
             <h2 className="font-semibold mb-4">Proyectos del Fondo de Ahorro</h2>
             <div className="space-y-4">
-              {projects.map((project) => (
-                <div key={project.name} className="border border-white/5 rounded-xl p-4">
-                  <div className="flex flex-wrap justify-between gap-2 mb-2">
-                    <p className="font-medium">{project.name}</p>
-                    <p className="text-sm text-white/50">Meta: {formatMoney(project.targetAmount)}</p>
+              {projects.map((project) => {
+                const isExecution = project.fundingMode === "EXECUTION";
+                const barWidth = isExecution
+                  ? (project.executionProgress ?? 0)
+                  : (project.progress ?? 0);
+                return (
+                  <div key={project.name} className="border border-white/5 rounded-xl p-4">
+                    <div className="flex flex-wrap justify-between gap-2 mb-2">
+                      <p className="font-medium">{project.name}</p>
+                      <p className="text-sm text-white/50">
+                        {isExecution ? "Presupuesto" : "Meta"}: {formatMoney(project.targetAmount)}
+                      </p>
+                    </div>
+                    <div className="w-full bg-black/40 rounded-full h-2 mb-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          isExecution
+                            ? "bg-gradient-to-r from-danger/80 to-danger"
+                            : "bg-gradient-to-r from-primary to-accent"
+                        }`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-white/50">
+                      {isExecution
+                        ? `Ejecutado ${project.executionProgress ?? 0}% · Gastado ${formatMoney(project.totalExpense)}`
+                        : `Avance ${project.progress ?? 0}% · Asignado ${formatMoney(project.totalIncome)} · Gastado ${formatMoney(project.totalExpense)}`}
+                    </p>
                   </div>
-                  <div className="w-full bg-black/40 rounded-full h-2 mb-2">
-                    <div
-                      className="bg-gradient-to-r from-primary to-accent h-2 rounded-full"
-                      style={{ width: `${project.progress}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-white/50">
-                    Avance {project.progress}% · Asignado {formatMoney(project.totalIncome)} · Gastado{" "}
-                    {formatMoney(project.totalExpense)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

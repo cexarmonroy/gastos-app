@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { X, AlignLeft, Target, Flag } from "lucide-react";
 import { createProject, updateProject } from "@/app/actions/projects";
-import type { ProjectStatus, ProjectSummary } from "@/lib/finance/types";
+import { PROJECT_FUNDING_MODE_LABELS } from "@/lib/finance/project-labels";
+import type { ProjectFundingMode, ProjectStatus, ProjectSummary } from "@/lib/finance/types";
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface ProjectModalProps {
   onSaved?: () => void;
   project?: Pick<
     ProjectSummary,
-    "id" | "name" | "targetAmount" | "status" | "description"
+    "id" | "name" | "targetAmount" | "status" | "fundingMode" | "description"
   > | null;
 }
 
@@ -29,6 +30,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     name: "",
     targetAmount: "",
     status: "PLANNED" as ProjectStatus,
+    fundingMode: "FUNDRAISING" as ProjectFundingMode,
     description: "",
   });
 
@@ -40,6 +42,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
         name: project.name,
         targetAmount: project.targetAmount.toString(),
         status: project.status,
+        fundingMode: project.fundingMode,
         description: project.description ?? "",
       });
     } else {
@@ -47,6 +50,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
         name: "",
         targetAmount: "",
         status: "PLANNED",
+        fundingMode: "FUNDRAISING",
         description: "",
       });
     }
@@ -62,6 +66,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
       name: formData.name,
       targetAmount: Number(formData.targetAmount),
       status: formData.status,
+      fundingMode: formData.fundingMode,
       description: formData.description,
     };
 
@@ -105,7 +110,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm text-white/80">Meta ($)</label>
+              <label className="text-sm text-white/80">
+                {formData.fundingMode === "EXECUTION" ? "Presupuesto ($)" : "Meta ($)"}
+              </label>
               <div className="relative">
                 <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
@@ -141,6 +148,28 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
           </div>
 
           <div className="space-y-1.5">
+            <label className="text-sm text-white/80">Tipo de proyecto</label>
+            <select
+              className="select-premium w-full"
+              value={formData.fundingMode}
+              onChange={(e) =>
+                setFormData((p) => ({
+                  ...p,
+                  fundingMode: e.target.value as ProjectFundingMode,
+                }))
+              }
+            >
+              <option value="FUNDRAISING">{PROJECT_FUNDING_MODE_LABELS.FUNDRAISING}</option>
+              <option value="EXECUTION">{PROJECT_FUNDING_MODE_LABELS.EXECUTION}</option>
+            </select>
+            <p className="text-[11px] text-white/40">
+              {formData.fundingMode === "FUNDRAISING"
+                ? "Hay que juntar fondos hacia una meta; el avance se mide con ingresos vinculados."
+                : "Se paga con saldo ya acumulado; el seguimiento muestra el gasto ejecutado."}
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
             <label className="text-sm text-white/80">Descripción</label>
             <div className="relative">
               <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-white/40" />
@@ -154,7 +183,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
           </div>
 
           <p className="text-[11px] text-white/40">
-            Los movimientos del Fondo de Ahorro vinculados al proyecto alimentan el avance hacia la meta.
+            {formData.fundingMode === "FUNDRAISING"
+              ? "Vincula ingresos del Fondo de Ahorro para avanzar hacia la meta."
+              : "Vincula los egresos del Fondo de Ahorro para registrar la inversión ejecutada."}
           </p>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-white/10">

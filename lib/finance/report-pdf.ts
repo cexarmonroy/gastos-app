@@ -397,12 +397,18 @@ export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot
     doc.setFont("helvetica", "bold");
     doc.text("Proyectos del ano", 14, yPosition);
     autoTable(doc, {
-      head: [["Proyecto", "Meta", "Ingresos ano", "Avance"]],
+      head: [["Proyecto", "Tipo", "Meta/Presup.", "Monto ano", "Indicador"]],
       body: snapshot.projects.map((project) => [
         toPdfSafeText(project.name),
+        project.fundingMode === "EXECUTION" ? "Ejecucion" : "Recaudacion",
         `$${project.targetAmount.toLocaleString("es-CL")}`,
-        `$${project.totalIncome.toLocaleString("es-CL")}`,
-        `${project.progress}%`,
+        `$${(project.fundingMode === "EXECUTION"
+          ? project.totalExpense
+          : project.totalIncome
+        ).toLocaleString("es-CL")}`,
+        project.fundingMode === "EXECUTION"
+          ? `${project.executionProgress ?? 0}% ejecutado`
+          : `${project.progress ?? 0}% avance`,
       ]),
       startY: yPosition + 4,
       theme: "grid",

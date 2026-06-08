@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
-import { AuditAction, MovementType, ProjectStatus, Prisma } from "@prisma/client";
+import {
+  AuditAction,
+  MovementType,
+  ProjectFundingMode,
+  ProjectStatus,
+  Prisma,
+} from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { computeProjectKpis } from "@/lib/finance/project-stats";
 import { toMovementRecord } from "@/lib/finance/map-movement";
@@ -13,6 +19,7 @@ interface ProjectInput {
   name: string;
   targetAmount: number;
   status?: ProjectStatus;
+  fundingMode?: ProjectFundingMode;
   description?: string;
 }
 
@@ -50,10 +57,11 @@ function mapProjectSummary(project: {
   description: string | null;
   targetAmount: Prisma.Decimal;
   status: ProjectStatus;
+  fundingMode: ProjectFundingMode;
   movements: Array<{ amount: Prisma.Decimal; movementType: MovementType }>;
 }): ProjectSummary {
   const targetAmount = Number(project.targetAmount);
-  const kpis = computeProjectKpis(project.movements, targetAmount);
+  const kpis = computeProjectKpis(project.movements, targetAmount, project.fundingMode);
 
   return {
     id: project.id,
@@ -61,11 +69,13 @@ function mapProjectSummary(project: {
     description: project.description,
     targetAmount,
     status: project.status,
+    fundingMode: project.fundingMode,
     totalIncome: kpis.totalIncome,
     totalExpense: kpis.totalExpense,
     balance: kpis.balance,
     movementCount: kpis.movementCount,
     progress: kpis.progress,
+    executionProgress: kpis.executionProgress,
   };
 }
 
@@ -121,7 +131,7 @@ export async function getProjectOptions(): Promise<ProjectOption[]> {
       status: { not: ProjectStatus.CANCELLED },
     },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, targetAmount: true, status: true },
+    select: { id: true, name: true, targetAmount: true, status: true, fundingMode: true },
   });
 
   return projects.map((p) => ({
@@ -129,6 +139,7 @@ export async function getProjectOptions(): Promise<ProjectOption[]> {
     name: p.name,
     targetAmount: Number(p.targetAmount),
     status: p.status,
+    fundingMode: p.fundingMode,
   }));
 }
 
@@ -147,6 +158,7 @@ export async function createProject(input: ProjectInput) {
         name: input.name.trim(),
         targetAmount: new Prisma.Decimal(input.targetAmount.toFixed(2)),
         status: input.status ?? ProjectStatus.PLANNED,
+        fundingMode: input.fundingMode ?? ProjectFundingMode.FUNDRAISING,
         description: input.description?.trim() || null,
       },
     });
@@ -162,6 +174,7 @@ export async function createProject(input: ProjectInput) {
           name: project.name,
           targetAmount: project.targetAmount.toString(),
           status: project.status,
+          fundingMode: project.fundingMode,
         },
       },
     });
@@ -200,6 +213,7 @@ export async function updateProject(id: string, input: ProjectInput) {
         name: input.name.trim(),
         targetAmount: new Prisma.Decimal(input.targetAmount.toFixed(2)),
         status: input.status ?? existing.status,
+        fundingMode: input.fundingMode ?? existing.fundingMode,
         description: input.description?.trim() || null,
       },
     });
@@ -215,11 +229,13 @@ export async function updateProject(id: string, input: ProjectInput) {
           name: existing.name,
           targetAmount: existing.targetAmount.toString(),
           status: existing.status,
+          fundingMode: existing.fundingMode,
         },
         newValues: {
           name: project.name,
           targetAmount: project.targetAmount.toString(),
           status: project.status,
+          fundingMode: project.fundingMode,
         },
       },
     });

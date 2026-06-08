@@ -5,6 +5,7 @@ import { computeCategorizationQuality } from "./categorization-quality";
 import { computeEventKpis } from "./event-stats";
 import { computeFundBalance } from "./map-movement";
 import { computeReportTotals } from "./report-filter";
+import { isFundraisingProject } from "./project-labels";
 import type { EventSummary, MovementRecord, ProjectSummary } from "./types";
 
 export interface AssemblyEventRow {
@@ -24,7 +25,10 @@ export interface AssemblyProjectRow {
   name: string;
   targetAmount: number;
   totalIncome: number;
-  progress: number;
+  totalExpense: number;
+  fundingMode: ProjectSummary["fundingMode"];
+  progress: number | null;
+  executionProgress: number | null;
   status: string;
   movementCount: number;
 }
@@ -108,22 +112,30 @@ function buildAssemblyProjects(
       const totalIncome = projectRecords
         .filter((record) => record.type === "Ingreso")
         .reduce((sum, record) => sum + Math.abs(record.amount), 0);
-      const progress =
-        project.targetAmount > 0
-          ? Math.min(100, Math.round((totalIncome / project.targetAmount) * 100))
-          : 0;
+      const totalExpense = projectRecords
+        .filter((record) => record.type === "Egreso")
+        .reduce((sum, record) => sum + Math.abs(record.amount), 0);
 
       return {
         id: project.id,
         name: project.name,
         targetAmount: project.targetAmount,
         totalIncome,
-        progress,
+        totalExpense,
+        fundingMode: project.fundingMode,
+        progress: isFundraisingProject(project.fundingMode) ? project.progress : null,
+        executionProgress: isFundraisingProject(project.fundingMode)
+          ? null
+          : project.executionProgress,
         status: project.status,
         movementCount: projectRecords.length,
       };
     })
-    .sort((a, b) => b.totalIncome - a.totalIncome);
+    .sort((a, b) =>
+      isFundraisingProject(a.fundingMode)
+        ? b.totalIncome - a.totalIncome
+        : b.totalExpense - a.totalExpense
+    );
 }
 
 export function buildAssemblySnapshot(
