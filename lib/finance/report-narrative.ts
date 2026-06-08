@@ -145,3 +145,10 @@ export function getExportContents(options: {
 export function formatMoney(amount: number): string {
   return `$${amount.toLocaleString("es-CL")}`;
 }
+
+export function formatShareOfTotal(
+  percent: number,
+  kind: "ingresos" | "gastos"
+): string {
+  return `${percent}% del total de ${kind}`;
+}

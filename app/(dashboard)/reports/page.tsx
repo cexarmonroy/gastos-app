@@ -46,6 +46,7 @@ import type { AssemblyReportSnapshot } from "@/lib/finance/assembly-report";
 import {
   buildExecutiveSummary,
   formatMoney,
+  formatShareOfTotal,
   getExportContents,
 } from "@/lib/finance/report-narrative";
 import {
@@ -139,33 +140,55 @@ function ComparisonDelta({
   previousLabel: string;
   invertColors?: boolean;
 }) {
+  const deltaAmount = metric.current - metric.previous;
+
   if (!metric.hasPreviousData) {
     return <span className="text-white/30 text-[11px]">Sin datos en {previousLabel}</span>;
   }
   if (metric.direction === "new") {
-    return <span className="text-white/40 text-[11px]">Nuevo vs {previousLabel}</span>;
+    return (
+      <span className="text-white/40 text-[11px]">
+        {formatMoney(metric.current)} en este período (sin base en {previousLabel})
+      </span>
+    );
   }
   if (metric.deltaPercent === null || metric.direction === "flat") {
     return (
       <span className="text-white/40 text-[11px] flex items-center gap-0.5">
-        <Minus className="w-3 h-3" /> 0% vs {previousLabel}
+        <Minus className="w-3 h-3" />
+        Sin cambio vs {previousLabel}
       </span>
     );
   }
 
-  const isPositive = metric.direction === "up";
+  const isPositive = deltaAmount > 0;
   const isGood = invertColors ? !isPositive : isPositive;
   const Icon = isPositive ? ArrowUp : ArrowDown;
+  const colorClass = isGood ? "text-success" : "text-danger";
+  const useAbsolute =
+    Math.abs(metric.deltaPercent) > 200 ||
+    (Math.abs(metric.previous) < Math.abs(metric.current) * 0.05 &&
+      Math.abs(metric.previous) > 0);
+
+  if (useAbsolute) {
+    return (
+      <span className={`text-[11px] flex items-center gap-0.5 ${colorClass}`}>
+        <Icon className="w-3 h-3" />
+        {deltaAmount >= 0 ? "+" : ""}
+        {formatMoney(deltaAmount)} vs {previousLabel}
+      </span>
+    );
+  }
 
   return (
-    <span
-      className={`text-[11px] flex items-center gap-0.5 ${
-        isGood ? "text-success" : "text-danger"
-      }`}
-    >
+    <span className={`text-[11px] flex items-center gap-0.5 ${colorClass}`}>
       <Icon className="w-3 h-3" />
       {isPositive ? "+" : ""}
       {metric.deltaPercent}% vs {previousLabel}
+      <span className="text-white/30 ml-0.5">
+        ({deltaAmount >= 0 ? "+" : ""}
+        {formatMoney(deltaAmount)})
+      </span>
     </span>
   );
 }
@@ -1257,9 +1280,16 @@ export default function ReportsPage() {
               Resumen ejecutivo
             </h3>
             {executiveSummary && (
-              <p className="text-white/40 text-xs mb-4">
-                {periodLabel} · {executiveSummary.fundLabel}
-              </p>
+              <div className="mb-4 space-y-1">
+                <p className="text-white/40 text-xs">
+                  {periodLabel} · {executiveSummary.fundLabel}
+                </p>
+                {periodComparison && (
+                  <p className="text-white/30 text-[10px]">
+                    Variación bajo cada total: cambio respecto a {periodComparison.previousLabel}
+                  </p>
+                )}
+              </div>
             )}
             {isPageLoading ? (
               <p className="text-white/50 text-sm">Cargando...</p>
@@ -1325,17 +1355,24 @@ export default function ReportsPage() {
 
                 {executiveSummary.topIncomes.length > 0 && (
                   <div>
-                    <p className="text-white/50 text-xs uppercase tracking-wide mb-2">
+                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">
                       Principales ingresos
                     </p>
-                    <div className="space-y-1.5">
+                    <p className="text-white/30 text-[10px] mb-2">
+                      % = participación sobre el total de ingresos del período
+                    </p>
+                    <div className="space-y-2">
                       {executiveSummary.topIncomes.map((item) => (
                         <div key={item.label} className="flex justify-between gap-2 text-xs">
                           <span className="text-white/70 truncate">{item.label}</span>
-                          <span className="text-success font-mono flex-shrink-0">
-                            {formatMoney(item.amount)}
-                            <span className="text-white/40 ml-1">({item.sharePercent}%)</span>
-                          </span>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-success font-mono">{formatMoney(item.amount)}</p>
+                            {incomeBreakdown.length > 1 && (
+                              <p className="text-white/35 text-[10px]">
+                                {formatShareOfTotal(item.sharePercent, "ingresos")}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1344,17 +1381,24 @@ export default function ReportsPage() {
 
                 {executiveSummary.topExpenses.length > 0 && (
                   <div>
-                    <p className="text-white/50 text-xs uppercase tracking-wide mb-2">
+                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">
                       Principales gastos
                     </p>
-                    <div className="space-y-1.5">
+                    <p className="text-white/30 text-[10px] mb-2">
+                      % = participación sobre el total de gastos del período
+                    </p>
+                    <div className="space-y-2">
                       {executiveSummary.topExpenses.map((item) => (
                         <div key={item.label} className="flex justify-between gap-2 text-xs">
                           <span className="text-white/70 truncate">{item.label}</span>
-                          <span className="text-danger font-mono flex-shrink-0">
-                            {formatMoney(item.amount)}
-                            <span className="text-white/40 ml-1">({item.sharePercent}%)</span>
-                          </span>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-danger font-mono">{formatMoney(item.amount)}</p>
+                            {expenseBreakdown.length > 1 && (
+                              <p className="text-white/35 text-[10px]">
+                                {formatShareOfTotal(item.sharePercent, "gastos")}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
