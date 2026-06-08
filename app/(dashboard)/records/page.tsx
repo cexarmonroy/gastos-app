@@ -316,7 +316,7 @@ export default function RecordsPage() {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col md:h-full md:min-h-0">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 md:mb-6">
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Gestión de Registros</h1>
@@ -595,142 +595,13 @@ export default function RecordsPage() {
         )}
       </div>
 
-      {/* Vista móvil — tarjetas */}
-      <div className="glass-panel flex-1 flex flex-col overflow-hidden md:hidden">
-        {isLoading ? (
-          <p className="text-center py-8 text-white/50 text-sm">Cargando movimientos...</p>
-        ) : displayedRecords.length === 0 ? (
-          <div className="text-center py-12 px-4">
-            <p className="text-white/50 text-base">No se encontraron registros</p>
-            {(searchTerm ||
-              startDate ||
-              endDate ||
-              categoryFilter ||
-              eventFilter ||
-              typeFilter !== "all") && (
-              <p className="text-white/40 text-xs mt-2">Intenta ajustar los filtros</p>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-white/5 overflow-y-auto flex-1 custom-scrollbar">
-            {displayedRecords.map((record) => {
-              const suggestion = suggestionMap.get(record.id);
-              return (
-                <div key={record.id} className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm text-white leading-snug">
-                        {record.description || "Sin descripción"}
-                      </p>
-                      <p className="text-white/50 text-xs mt-1">
-                        {format(record.date, "dd MMM yyyy", { locale: es })}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium border ${
-                          record.type === "Ingreso"
-                            ? "bg-success/10 text-success border-success/20"
-                            : "bg-danger/10 text-danger border-danger/20"
-                        }`}
-                      >
-                        {record.type}
-                      </span>
-                      <span
-                        className={`font-semibold text-sm whitespace-nowrap ${
-                          record.type === "Ingreso" ? "text-success" : "text-white"
-                        }`}
-                      >
-                        {record.type === "Ingreso" ? "+" : "-"}$
-                        {Math.abs(record.amount).toLocaleString("es-CL")}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 text-[11px]">
-                    {record.transferId ? (
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-white/50">Transferencia</span>
-                    ) : record.categoryName ? (
-                      <span
-                        className={`px-2 py-0.5 rounded ${
-                          isPoorlyCategorized(record)
-                            ? "bg-accent/10 text-accent border border-accent/20"
-                            : "bg-white/10 text-white/70"
-                        }`}
-                      >
-                        {record.categoryName}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded bg-accent/10 text-accent">Sin categoría</span>
-                    )}
-                    {suggestion && (
-                      <span className="px-2 py-0.5 rounded bg-success/10 text-success border border-success/20 flex items-center gap-1">
-                        → {suggestion.categoryName}
-                        {isAdminOrDirectiva && !record.transferId && (
-                          <button
-                            onClick={() =>
-                              handleApplySuggestion(
-                                record,
-                                suggestion.categoryId,
-                                suggestion.categoryName
-                              )
-                            }
-                            disabled={applyingId === record.id}
-                            className="p-0.5 rounded bg-success/20 disabled:opacity-50"
-                            title={`Aplicar ${suggestion.categoryName}`}
-                          >
-                            {applyingId === record.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Check className="w-3 h-3" />
-                            )}
-                          </button>
-                        )}
-                      </span>
-                    )}
-                    {record.eventName && record.eventId && (
-                      <Link
-                        href={`/events/${record.eventId}`}
-                        className="px-2 py-0.5 rounded bg-primary/10 text-primary flex items-center gap-1"
-                      >
-                        <PartyPopper className="w-3 h-3" />
-                        {record.eventName}
-                      </Link>
-                    )}
-                  </div>
-
-                  {isAdminOrDirectiva && !record.transferId && (
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        onClick={() => openEdit(record)}
-                        className="btn-secondary flex-1 text-xs py-2 flex items-center justify-center gap-1.5"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleVoid(record)}
-                        className="btn-secondary flex-1 text-xs py-2 flex items-center justify-center gap-1.5 text-danger"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Anular
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <div className="border-t border-white/10 p-3 text-xs text-white/60 bg-white/5">
-          Mostrando {displayedRecords.length} registros
-        </div>
-      </div>
-
-      {/* Vista desktop — tabla */}
-      <div className="glass-panel flex-1 flex-col overflow-hidden hidden md:flex">
-        <div className="overflow-x-auto flex-1 custom-scrollbar">
-          <table className="w-full min-w-[720px] text-sm text-left border-collapse">
+      {/* Tabla responsive — scroll horizontal en móvil */}
+      <div className="glass-panel flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
+        <p className="md:hidden px-3 pt-3 text-[11px] text-white/40">
+          Desliza horizontalmente para ver todas las columnas
+        </p>
+        <div className="overflow-x-auto md:flex-1 custom-scrollbar">
+          <table className="w-full min-w-[640px] text-xs md:text-sm text-left border-collapse">
             <thead className="text-xs uppercase bg-[#0f1115] border-b border-white/10 sticky top-0 z-10">
               <tr>
                 <th 
@@ -777,7 +648,7 @@ export default function RecordsPage() {
                     )}
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden lg:table-cell">
+                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80">
                   Categoría
                 </th>
                 <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden lg:table-cell">
@@ -848,12 +719,12 @@ export default function RecordsPage() {
                         {record.amount < 0 ? '-' : ''}${Math.abs(record.amount).toLocaleString('es-CL')}
                       </span>
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 hidden lg:table-cell">
+                    <td className="px-3 md:px-6 py-3 md:py-4">
                       {record.transferId ? (
                         <span className="text-white/40 text-[9px] md:text-[10px]">Transferencia</span>
                       ) : record.categoryName ? (
                         <span
-                          className={`px-1.5 md:px-2 py-0.5 rounded text-[9px] md:text-[10px] ${
+                          className={`px-1.5 md:px-2 py-0.5 rounded text-[9px] md:text-[10px] whitespace-nowrap ${
                             isPoorlyCategorized(record)
                               ? "bg-accent/10 text-accent border border-accent/20"
                               : "bg-white/10 text-white/70"
@@ -942,8 +813,8 @@ export default function RecordsPage() {
           </table>
         </div>
         
-        <div className="border-t border-white/10 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-sm text-white/60 bg-white/5">
-          <div>Mostrando {displayedRecords.length} registros</div>
+        <div className="border-t border-white/10 p-3 md:p-4 text-xs md:text-sm text-white/60 bg-white/5">
+          Mostrando {displayedRecords.length} registros
         </div>
       </div>
       <RecordModal
