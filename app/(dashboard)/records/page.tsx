@@ -39,7 +39,7 @@ import {
 } from "@/lib/finance/categorization-quality";
 import { getCategorySuggestion } from "@/lib/finance/category-suggestion";
 import type { CategoryOption, EventOption, MovementRecord } from "@/lib/finance/types";
-import { getBase64ImageFromUrl } from "@/lib/pdf-utils";
+import { getBase64ImageFromUrl, toPdfSafeText } from "@/lib/pdf-utils";
 
 type SortField = "date" | "description" | "type" | "amount";
 type SortDirection = "asc" | "desc";
@@ -125,12 +125,12 @@ export default function RecordsPage() {
     doc.setFont("helvetica", "normal");
     doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 40, 28);
     
-    const tableColumn = ["Fecha", "Descripción", "Categoría", "Tipo", "Monto"];
+    const tableColumn = ["Fecha", "Descripcion", "Categoria", "Tipo", "Monto"];
     const tableRows = filteredRecords.map(r => [
       format(r.date, "dd/MM/yyyy"),
-      r.description,
-      r.categoryName || "Sin categoría",
-      r.type,
+      toPdfSafeText(r.description, "Sin descripcion"),
+      toPdfSafeText(r.categoryName, "Sin categoria"),
+      toPdfSafeText(r.type),
       `$${Math.abs(r.amount).toLocaleString('es-CL')}`,
     ]);
 

@@ -1,4 +1,20 @@
 /**
+ * Normaliza texto para jsPDF (Helvetica solo soporta Latin-1 básico).
+ * Evita caracteres corruptos como &P&r&eacute;... con tildes, flechas, etc.
+ */
+export function toPdfSafeText(text: string | null | undefined, fallback = ""): string {
+  if (text == null || text === "") return fallback;
+
+  return text
+    .replace(/→/g, "->")
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E]/g, "");
+}
+
+/**
  * Converts an image path/URL to a Base64 string.
  * Since this runs on the client-side in Next.js, we use a canvas to perform the conversion.
  */

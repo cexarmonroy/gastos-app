@@ -25,6 +25,17 @@ export function isTransferMovement(record: CategorizableRecord): boolean {
   return record.transferId !== null;
 }
 
+/** Cuenta operaciones de transferencia (cada una genera 2 movimientos vinculados). */
+export function countTransferOperations(
+  records: Pick<MovementRecord, "transferId">[]
+): number {
+  const ids = new Set<string>();
+  for (const record of records) {
+    if (record.transferId) ids.add(record.transferId);
+  }
+  return ids.size;
+}
+
 /** Movimientos que sí deben tener categoría contable (excluye transferencias). */
 export function isEvaluableForCategorization(record: CategorizableRecord): boolean {
   return !isTransferMovement(record);
@@ -43,7 +54,7 @@ export function computeCategorizationQuality(
   const total = records.length;
   const evaluable = records.filter(isEvaluableForCategorization);
   const evaluableCount = evaluable.length;
-  const transferCount = total - evaluableCount;
+  const transferCount = countTransferOperations(records);
 
   if (evaluableCount === 0) {
     return {
