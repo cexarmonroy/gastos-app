@@ -63,6 +63,7 @@ DATABASE_URL="postgresql://user:password@host:port/dbname"
 # NextAuth
 NEXTAUTH_SECRET="tu_secreto_generado"
 NEXTAUTH_URL="http://localhost:3001"
+# En Vercel producción usar: NEXTAUTH_URL="https://gastos-app-henna.vercel.app"
 
 # Google Sheets Integration
 GOOGLE_SHEET_ID="id_de_tu_hoja_de_calculo"

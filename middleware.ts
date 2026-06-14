@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { getAuthToken } from "@/lib/auth-token";
 import { isPublicPortalEnabled } from "@/lib/public-portal";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -30,7 +30,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  const token = await getAuthToken(req);
+
   if (pathname === "/") {
+    if (token) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
     return NextResponse.next();
   }
 
@@ -38,26 +43,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-
   if (!token) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   const isAdminOnly = ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
   if (isAdminOnly && token.role !== "ADMIN") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   const isRestricted = RESTRICTED_ROUTES.some((route) => pathname.startsWith(route));
   if (isRestricted && token.role !== "ADMIN" && token.role !== "DIRECTIVA") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return NextResponse.next();
