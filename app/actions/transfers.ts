@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
 import { AuditAction, MovementType, Prisma } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
-import { exportRecordToSheets } from "@/app/actions/sheets";
+import { assertCanManage, assertCanWrite } from "@/lib/auth-guards";
+import { exportRecordToSheets } from "@/lib/finance/sheets-export";
 import { ORG_SLUG, TAB_TO_FUND_CODE, type FundTab } from "@/lib/finance/types";
 import { prisma } from "@/lib/prisma";
+import { toClientError } from "@/lib/safe-error";
+import { parseInput } from "@/lib/validations/parse";
+import { createTransferSchema } from "@/lib/validations/schemas";
 
 interface CreateTransferInput {
   fromFund: FundTab;
@@ -29,33 +31,8 @@ async function getOrganizationId() {
   return organization.id;
 }
 
-async function assertCanWrite() {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role;
-
-  if (!session?.user?.id) {
-    throw new Error("Debes iniciar sesión.");
-  }
-
-  if (role !== "ADMIN" && role !== "DIRECTIVA") {
-    throw new Error("No tienes permisos para registrar transferencias.");
-  }
-
-  return session.user.id;
-}
-
-async function getFundByTab(organizationId: string, tab: FundTab) {
-  return prisma.fund.findUnique({
-    where: {
-      organizationId_code: {
-        organizationId,
-        code: TAB_TO_FUND_CODE[tab],
-      },
-    },
-  });
-}
-
 export async function fetchTransfers() {
+  await assertCanManage();
   const organizationId = await getOrganizationId();
 
   const transfers = await prisma.transfer.findMany({
@@ -83,30 +60,34 @@ export async function fetchTransfers() {
   }));
 }
 
+async function getFundByTab(organizationId: string, tab: FundTab) {
+  return prisma.fund.findUnique({
+    where: {
+      organizationId_code: {
+        organizationId,
+        code: TAB_TO_FUND_CODE[tab],
+      },
+    },
+  });
+}
+
 export async function createTransfer(input: CreateTransferInput) {
   try {
     const userId = await assertCanWrite();
+    const data = parseInput(createTransferSchema, input);
     const organizationId = await getOrganizationId();
 
-    if (input.fromFund === input.toFund) {
-      throw new Error("El fondo origen y destino deben ser distintos.");
-    }
-
-    if (input.amount <= 0) {
-      throw new Error("El monto debe ser mayor a cero.");
-    }
-
-    const fromFund = await getFundByTab(organizationId, input.fromFund);
-    const toFund = await getFundByTab(organizationId, input.toFund);
+    const fromFund = await getFundByTab(organizationId, data.fromFund);
+    const toFund = await getFundByTab(organizationId, data.toFund);
 
     if (!fromFund || !toFund) {
       throw new Error("Fondos no encontrados.");
     }
 
-    const amount = new Prisma.Decimal(Math.abs(input.amount).toFixed(2));
-    const date = new Date(input.date);
+    const amount = new Prisma.Decimal(Math.abs(data.amount).toFixed(2));
+    const date = new Date(data.date);
     const description =
-      input.description.trim() ||
+      data.description ||
       `Transferencia ${fromFund.name} → ${toFund.name}`;
 
     const transfer = await prisma.$transaction(async (tx) => {
@@ -170,18 +151,18 @@ export async function createTransfer(input: CreateTransferInput) {
     if (process.env.WRITE_TO_SHEETS !== "false") {
       try {
         await exportRecordToSheets({
-          date: input.date,
+          date: data.date,
           amount: Number(amount),
           type: "Egreso",
           description: `${description} (transferencia salida)`,
-          category: input.fromFund,
+          category: data.fromFund,
         });
         await exportRecordToSheets({
-          date: input.date,
+          date: data.date,
           amount: Number(amount),
           type: "Ingreso",
           description: `${description} (transferencia entrada)`,
-          category: input.toFund,
+          category: data.toFund,
         });
       } catch (exportError) {
         console.error("Exportación a Sheets falló (transferencia guardada en BD):", exportError);
@@ -198,7 +179,7 @@ export async function createTransfer(input: CreateTransferInput) {
     console.error("Error creating transfer:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }

@@ -1,34 +1,71 @@
-import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
+import { isPublicPortalEnabled } from "@/lib/public-portal";
+import { rateLimit } from "@/lib/rate-limit";
 
-export default withAuth({
-  pages: {
-    signIn: "/",
-  },
-  callbacks: {
-    authorized: ({ token, req }) => {
-      const { pathname } = req.nextUrl;
+const RESTRICTED_ROUTES = ["/reports", "/reconciliation", "/transfers", "/audit", "/inscripciones"];
+const ADMIN_ONLY_ROUTES = ["/users"];
+const AUTH_RATE_MAX = 30;
+const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
 
-      if (pathname.startsWith("/portal")) {
-        return true;
-      }
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
-      if (!token) return false;
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-      // Rutas restringidas
-      const restrictedRoutes = ["/reports", "/reconciliation", "/transfers", "/audit"];
-      const isRestricted = restrictedRoutes.some(route => pathname.startsWith(route));
+  if (pathname.startsWith("/api/auth")) {
+    if (rateLimit(`auth:${getClientIp(req)}`, AUTH_RATE_MAX, AUTH_RATE_WINDOW_MS)) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Espera unos minutos." },
+        { status: 429 }
+      );
+    }
+    return NextResponse.next();
+  }
 
-      if (isRestricted) {
-        return token.role === "ADMIN" || token.role === "DIRECTIVA";
-      }
+  if (pathname === "/") {
+    return NextResponse.next();
+  }
 
-      return true;
-    },
-  },
-});
+  if (pathname.startsWith("/portal") && isPublicPortalEnabled()) {
+    return NextResponse.next();
+  }
+
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+
+  if (!token) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
+  const isAdminOnly = ADMIN_ONLY_ROUTES.some((route) => pathname.startsWith(route));
+  if (isAdminOnly && token.role !== "ADMIN") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  const isRestricted = RESTRICTED_ROUTES.some((route) => pathname.startsWith(route));
+  if (isRestricted && token.role !== "ADMIN" && token.role !== "DIRECTIVA") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    "/api/auth/:path*",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

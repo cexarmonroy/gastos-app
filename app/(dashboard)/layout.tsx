@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Navbar } from "@/components/layout/Navbar";
+import { isPublicPortalEnabled } from "@/lib/public-portal";
 
 export default function DashboardLayout({
   children,
@@ -8,7 +9,7 @@ export default function DashboardLayout({
 }>) {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
+      <Sidebar publicPortalEnabled={isPublicPortalEnabled()} />
       <div className="flex-1 flex flex-col relative overflow-hidden md:ml-0">
         
         {/* Background ambient effects */}

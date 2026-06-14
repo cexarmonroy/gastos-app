@@ -13,5 +13,6 @@ ALTER TABLE "FundraisingEvent" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Project" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "AuditLog" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ReconciliationLog" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Attachment" ENABLE ROW LEVEL SECURITY;
 
 -- Default: no policies = deny all for anon/authenticated via PostgREST.

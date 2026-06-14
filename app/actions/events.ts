@@ -1,13 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
 import { AuditAction, MovementType, Prisma } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
+import { assertAuthenticated, assertCanWrite } from "@/lib/auth-guards";
 import { computeEventKpis } from "@/lib/finance/event-stats";
 import { toMovementRecord } from "@/lib/finance/map-movement";
 import { ORG_SLUG, type EventOption, type EventSummary } from "@/lib/finance/types";
 import { prisma } from "@/lib/prisma";
+import { toClientError } from "@/lib/safe-error";
+import { parseInput } from "@/lib/validations/parse";
+import { createEventSchema, updateEventSchema } from "@/lib/validations/schemas";
 
 interface EventInput {
   name: string;
@@ -27,21 +29,6 @@ async function getOrganizationId() {
   }
 
   return organization.id;
-}
-
-async function assertCanWrite() {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role;
-
-  if (!session?.user?.id) {
-    throw new Error("Debes iniciar sesión.");
-  }
-
-  if (role !== "ADMIN" && role !== "DIRECTIVA") {
-    throw new Error("No tienes permisos para gestionar actividades.");
-  }
-
-  return session.user.id;
 }
 
 function mapEventSummary(
@@ -72,6 +59,7 @@ function mapEventSummary(
 }
 
 export async function fetchEvents(): Promise<EventSummary[]> {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const events = await prisma.fundraisingEvent.findMany({
@@ -89,6 +77,7 @@ export async function fetchEvents(): Promise<EventSummary[]> {
 }
 
 export async function getEventDetail(id: string) {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const event = await prisma.fundraisingEvent.findFirst({
@@ -122,6 +111,7 @@ export async function getEventDetail(id: string) {
 }
 
 export async function getEventOptions(): Promise<EventOption[]> {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const events = await prisma.fundraisingEvent.findMany({
@@ -141,18 +131,19 @@ export async function getEventOptions(): Promise<EventOption[]> {
 export async function createEvent(input: EventInput) {
   try {
     const userId = await assertCanWrite();
+    const data = parseInput(createEventSchema, input);
     const organizationId = await getOrganizationId();
 
     const event = await prisma.fundraisingEvent.create({
       data: {
         organizationId,
-        name: input.name.trim(),
-        date: new Date(input.date),
+        name: data.name,
+        date: new Date(data.date),
         goal:
-          input.goal != null && input.goal > 0
-            ? new Prisma.Decimal(input.goal.toFixed(2))
+          data.goal != null && data.goal > 0
+            ? new Prisma.Decimal(data.goal.toFixed(2))
             : null,
-        description: input.description?.trim() || null,
+        description: data.description || null,
       },
     });
 
@@ -177,7 +168,7 @@ export async function createEvent(input: EventInput) {
   } catch (error) {
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }
@@ -185,10 +176,11 @@ export async function createEvent(input: EventInput) {
 export async function updateEvent(id: string, input: EventInput) {
   try {
     const userId = await assertCanWrite();
+    const { id: eventId, input: data } = parseInput(updateEventSchema, { id, input });
     const organizationId = await getOrganizationId();
 
     const existing = await prisma.fundraisingEvent.findFirst({
-      where: { id, organizationId },
+      where: { id: eventId, organizationId },
     });
 
     if (!existing) {
@@ -196,15 +188,15 @@ export async function updateEvent(id: string, input: EventInput) {
     }
 
     const event = await prisma.fundraisingEvent.update({
-      where: { id },
+      where: { id: eventId },
       data: {
-        name: input.name.trim(),
-        date: new Date(input.date),
+        name: data.name,
+        date: new Date(data.date),
         goal:
-          input.goal != null && input.goal > 0
-            ? new Prisma.Decimal(input.goal.toFixed(2))
+          data.goal != null && data.goal > 0
+            ? new Prisma.Decimal(data.goal.toFixed(2))
             : null,
-        description: input.description?.trim() || null,
+        description: data.description || null,
       },
     });
 
@@ -229,13 +221,13 @@ export async function updateEvent(id: string, input: EventInput) {
     });
 
     revalidatePath("/events");
-    revalidatePath(`/events/${id}`);
+    revalidatePath(`/events/${eventId}`);
 
     return { success: true as const };
   } catch (error) {
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }

@@ -1,13 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
 import { AuditAction, CategoryType, MovementType, Prisma } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
+import { assertAuthenticated, assertCanWrite } from "@/lib/auth-guards";
 import { labelToMovementType, toMovementRecord } from "@/lib/finance/map-movement";
+import { exportRecordToSheets } from "@/lib/finance/sheets-export";
+import { toClientError } from "@/lib/safe-error";
+import { parseInput } from "@/lib/validations/parse";
+import {
+  applyCategorySuggestionSchema,
+  createMovementSchema,
+  updateMovementSchema,
+  voidMovementSchema,
+} from "@/lib/validations/schemas";
 import { FUND_CODE_TO_TAB, ORG_SLUG, TAB_TO_FUND_CODE, type CategoryOption, type FundOption, type FundTab, type MovementRecord } from "@/lib/finance/types";
 import { prisma } from "@/lib/prisma";
-import { exportRecordToSheets } from "@/app/actions/sheets";
 import {
   getDefaultCategoryCodeForEventMovement,
 } from "@/lib/finance/event-category";
@@ -152,22 +159,8 @@ async function getOrganizationId() {
   return organization.id;
 }
 
-async function assertCanWrite() {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role;
-
-  if (!session?.user?.id) {
-    throw new Error("Debes iniciar sesión para registrar movimientos.");
-  }
-
-  if (role !== "ADMIN" && role !== "DIRECTIVA") {
-    throw new Error("No tienes permisos para registrar movimientos.");
-  }
-
-  return session.user.id;
-}
-
 export async function fetchMovementsData(): Promise<MovementRecord[]> {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const movements = await prisma.movement.findMany({
@@ -188,6 +181,7 @@ export async function fetchMovementsData(): Promise<MovementRecord[]> {
 }
 
 export async function getFundOptions(): Promise<FundOption[]> {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const funds = await prisma.fund.findMany({
@@ -204,6 +198,7 @@ export async function getFundOptions(): Promise<FundOption[]> {
 }
 
 export async function getAllCategoryOptions(): Promise<CategoryOption[]> {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const categories = await prisma.category.findMany({
@@ -220,6 +215,7 @@ export async function getAllCategoryOptions(): Promise<CategoryOption[]> {
 }
 
 export async function getCategoryOptions(type: "Ingreso" | "Egreso"): Promise<CategoryOption[]> {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
   const categoryType = type === "Ingreso" ? CategoryType.INCOME : CategoryType.EXPENSE;
 
@@ -243,9 +239,10 @@ export async function getCategoryOptions(type: "Ingreso" | "Egreso"): Promise<Ca
 export async function createMovement(input: CreateMovementInput) {
   try {
     const userId = await assertCanWrite();
+    const data = parseInput(createMovementSchema, input);
     const organizationId = await getOrganizationId();
-    const movementType = labelToMovementType(input.type);
-    const fundCode = TAB_TO_FUND_CODE[input.fund];
+    const movementType = labelToMovementType(data.type);
+    const fundCode = TAB_TO_FUND_CODE[data.fund];
 
     const fund = await prisma.fund.findUnique({
       where: {
@@ -260,16 +257,16 @@ export async function createMovement(input: CreateMovementInput) {
       throw new Error(`Fondo ${fundCode} no encontrado.`);
     }
 
-    const resolvedEventId = await resolveEventId(organizationId, input.eventId);
+    const resolvedEventId = await resolveEventId(organizationId, data.eventId);
     const resolvedProjectId = await resolveProjectId(
       organizationId,
       fundCode,
-      input.projectId
+      data.projectId
     );
     const categoryId = await resolveCategoryIdForMovement(
       organizationId,
       movementType,
-      input.categoryId,
+      data.categoryId,
       resolvedEventId
     );
 
@@ -280,10 +277,10 @@ export async function createMovement(input: CreateMovementInput) {
         categoryId,
         eventId: resolvedEventId,
         projectId: resolvedProjectId,
-        date: new Date(input.date),
-        amount: new Prisma.Decimal(Math.abs(input.amount).toFixed(2)),
+        date: new Date(data.date),
+        amount: new Prisma.Decimal(Math.abs(data.amount).toFixed(2)),
         movementType,
-        description: input.description.trim(),
+        description: data.description,
         createdById: userId,
       },
       include: {
@@ -307,11 +304,11 @@ export async function createMovement(input: CreateMovementInput) {
     if (process.env.WRITE_TO_SHEETS !== "false") {
       try {
         await exportRecordToSheets({
-          date: input.date,
-          amount: Math.abs(input.amount),
-          type: input.type,
-          description: input.description,
-          category: input.fund,
+          date: data.date,
+          amount: Math.abs(data.amount),
+          type: data.type,
+          description: data.description,
+          category: data.fund,
         });
       } catch (exportError) {
         console.error("Exportación a Sheets falló (movimiento guardado en BD):", exportError);
@@ -329,7 +326,7 @@ export async function createMovement(input: CreateMovementInput) {
     console.error("Error creating movement:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }
@@ -337,12 +334,13 @@ export async function createMovement(input: CreateMovementInput) {
 export async function updateMovement(input: UpdateMovementInput) {
   try {
     const userId = await assertCanWrite();
+    const data = parseInput(updateMovementSchema, input);
     const organizationId = await getOrganizationId();
-    const movementType = labelToMovementType(input.type);
-    const fundCode = TAB_TO_FUND_CODE[input.fund];
+    const movementType = labelToMovementType(data.type);
+    const fundCode = TAB_TO_FUND_CODE[data.fund];
 
     const existing = await prisma.movement.findFirst({
-      where: { id: input.id, organizationId, deletedAt: null },
+      where: { id: data.id, organizationId, deletedAt: null },
       include: { fund: true, category: true, event: true, project: true },
     });
 
@@ -362,31 +360,31 @@ export async function updateMovement(input: UpdateMovementInput) {
       throw new Error(`Fondo ${fundCode} no encontrado.`);
     }
 
-    const resolvedEventId = await resolveEventId(organizationId, input.eventId);
+    const resolvedEventId = await resolveEventId(organizationId, data.eventId);
     const resolvedProjectId = await resolveProjectId(
       organizationId,
       fundCode,
-      input.projectId
+      data.projectId
     );
     const categoryId = await resolveCategoryIdForMovement(
       organizationId,
       movementType,
-      input.categoryId,
+      data.categoryId,
       resolvedEventId
     );
     const oldSnapshot = movementAuditSnapshot(existing);
 
     const movement = await prisma.movement.update({
-      where: { id: input.id },
+      where: { id: data.id },
       data: {
         fundId: fund.id,
         categoryId,
         eventId: resolvedEventId,
         projectId: resolvedProjectId,
-        date: new Date(input.date),
-        amount: new Prisma.Decimal(Math.abs(input.amount).toFixed(2)),
+        date: new Date(data.date),
+        amount: new Prisma.Decimal(Math.abs(data.amount).toFixed(2)),
         movementType,
-        description: input.description.trim(),
+        description: data.description,
         updatedById: userId,
       },
       include: { fund: true, category: true, event: true, project: true },
@@ -415,7 +413,7 @@ export async function updateMovement(input: UpdateMovementInput) {
     console.error("Error updating movement:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }
@@ -423,10 +421,14 @@ export async function updateMovement(input: UpdateMovementInput) {
 export async function applyCategorySuggestion(movementId: string, categoryId: string) {
   try {
     const userId = await assertCanWrite();
+    const { movementId: id, categoryId: catId } = parseInput(
+      applyCategorySuggestionSchema,
+      { movementId, categoryId }
+    );
     const organizationId = await getOrganizationId();
 
     const existing = await prisma.movement.findFirst({
-      where: { id: movementId, organizationId, deletedAt: null },
+      where: { id, organizationId, deletedAt: null },
       include: { fund: true, category: true, event: true, project: true },
     });
 
@@ -439,7 +441,7 @@ export async function applyCategorySuggestion(movementId: string, categoryId: st
     }
 
     const category = await prisma.category.findFirst({
-      where: { id: categoryId, organizationId, active: true },
+      where: { id: catId, organizationId, active: true },
     });
 
     if (!category) {
@@ -456,8 +458,8 @@ export async function applyCategorySuggestion(movementId: string, categoryId: st
     const oldSnapshot = movementAuditSnapshot(existing);
 
     const movement = await prisma.movement.update({
-      where: { id: movementId },
-      data: { categoryId, updatedById: userId },
+      where: { id },
+      data: { categoryId: catId, updatedById: userId },
       include: { fund: true, category: true, event: true, project: true },
     });
 
@@ -483,7 +485,7 @@ export async function applyCategorySuggestion(movementId: string, categoryId: st
     console.error("Error applying category suggestion:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }
@@ -491,10 +493,11 @@ export async function applyCategorySuggestion(movementId: string, categoryId: st
 export async function voidMovement(id: string) {
   try {
     const userId = await assertCanWrite();
+    const { id: movementId } = parseInput(voidMovementSchema, { id });
     const organizationId = await getOrganizationId();
 
     const existing = await prisma.movement.findFirst({
-      where: { id, organizationId, deletedAt: null },
+      where: { id: movementId, organizationId, deletedAt: null },
       include: { fund: true, category: true, event: true, project: true },
     });
 
@@ -507,7 +510,7 @@ export async function voidMovement(id: string) {
     }
 
     await prisma.movement.update({
-      where: { id },
+      where: { id: movementId },
       data: { deletedAt: new Date(), updatedById: userId },
     });
 
@@ -517,7 +520,7 @@ export async function voidMovement(id: string) {
         userId,
         action: AuditAction.DELETE,
         entity: "movements",
-        entityId: id,
+        entityId: movementId,
         oldValues: movementAuditSnapshot(existing),
       },
     });
@@ -534,7 +537,7 @@ export async function voidMovement(id: string) {
     console.error("Error voiding movement:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }
@@ -559,7 +562,7 @@ export async function logReportExport(metadata: Record<string, unknown>) {
   } catch (error) {
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }

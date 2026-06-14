@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
 import {
   AuditAction,
   MovementType,
@@ -9,11 +8,14 @@ import {
   ProjectStatus,
   Prisma,
 } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
+import { assertAuthenticated, assertCanWrite } from "@/lib/auth-guards";
 import { computeProjectKpis } from "@/lib/finance/project-stats";
 import { toMovementRecord } from "@/lib/finance/map-movement";
 import { ORG_SLUG, type ProjectOption, type ProjectSummary } from "@/lib/finance/types";
 import { prisma } from "@/lib/prisma";
+import { toClientError } from "@/lib/safe-error";
+import { parseInput } from "@/lib/validations/parse";
+import { createProjectSchema, updateProjectSchema } from "@/lib/validations/schemas";
 
 interface ProjectInput {
   name: string;
@@ -34,21 +36,6 @@ async function getOrganizationId() {
   }
 
   return organization.id;
-}
-
-async function assertCanWrite() {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role;
-
-  if (!session?.user?.id) {
-    throw new Error("Debes iniciar sesión.");
-  }
-
-  if (role !== "ADMIN" && role !== "DIRECTIVA") {
-    throw new Error("No tienes permisos para gestionar proyectos.");
-  }
-
-  return session.user.id;
 }
 
 function mapProjectSummary(project: {
@@ -80,6 +67,7 @@ function mapProjectSummary(project: {
 }
 
 export async function fetchProjects(): Promise<ProjectSummary[]> {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const projects = await prisma.project.findMany({
@@ -97,6 +85,7 @@ export async function fetchProjects(): Promise<ProjectSummary[]> {
 }
 
 export async function getProjectDetail(id: string) {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const project = await prisma.project.findFirst({
@@ -123,6 +112,7 @@ export async function getProjectDetail(id: string) {
 }
 
 export async function getProjectOptions(): Promise<ProjectOption[]> {
+  await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
   const projects = await prisma.project.findMany({
@@ -146,20 +136,17 @@ export async function getProjectOptions(): Promise<ProjectOption[]> {
 export async function createProject(input: ProjectInput) {
   try {
     const userId = await assertCanWrite();
+    const data = parseInput(createProjectSchema, input);
     const organizationId = await getOrganizationId();
-
-    if (input.targetAmount <= 0) {
-      throw new Error("La meta debe ser mayor a cero.");
-    }
 
     const project = await prisma.project.create({
       data: {
         organizationId,
-        name: input.name.trim(),
-        targetAmount: new Prisma.Decimal(input.targetAmount.toFixed(2)),
-        status: input.status ?? ProjectStatus.PLANNED,
-        fundingMode: input.fundingMode ?? ProjectFundingMode.FUNDRAISING,
-        description: input.description?.trim() || null,
+        name: data.name,
+        targetAmount: new Prisma.Decimal(data.targetAmount.toFixed(2)),
+        status: data.status ?? ProjectStatus.PLANNED,
+        fundingMode: data.fundingMode ?? ProjectFundingMode.FUNDRAISING,
+        description: data.description || null,
       },
     });
 
@@ -185,7 +172,7 @@ export async function createProject(input: ProjectInput) {
   } catch (error) {
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }
@@ -193,28 +180,25 @@ export async function createProject(input: ProjectInput) {
 export async function updateProject(id: string, input: ProjectInput) {
   try {
     const userId = await assertCanWrite();
+    const { id: projectId, input: data } = parseInput(updateProjectSchema, { id, input });
     const organizationId = await getOrganizationId();
 
     const existing = await prisma.project.findFirst({
-      where: { id, organizationId },
+      where: { id: projectId, organizationId },
     });
 
     if (!existing) {
       throw new Error("Proyecto no encontrado.");
     }
 
-    if (input.targetAmount <= 0) {
-      throw new Error("La meta debe ser mayor a cero.");
-    }
-
     const project = await prisma.project.update({
-      where: { id },
+      where: { id: projectId },
       data: {
-        name: input.name.trim(),
-        targetAmount: new Prisma.Decimal(input.targetAmount.toFixed(2)),
-        status: input.status ?? existing.status,
-        fundingMode: input.fundingMode ?? existing.fundingMode,
-        description: input.description?.trim() || null,
+        name: data.name,
+        targetAmount: new Prisma.Decimal(data.targetAmount.toFixed(2)),
+        status: data.status ?? existing.status,
+        fundingMode: data.fundingMode ?? existing.fundingMode,
+        description: data.description || null,
       },
     });
 
@@ -241,13 +225,13 @@ export async function updateProject(id: string, input: ProjectInput) {
     });
 
     revalidatePath("/projects");
-    revalidatePath(`/projects/${id}`);
+    revalidatePath(`/projects/${projectId}`);
 
     return { success: true as const };
   } catch (error) {
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }

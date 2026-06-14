@@ -26,9 +26,9 @@ import {
 } from "../lib/sheet-parser";
 
 const ORG_SLUG = "cgpa";
-const SHEET_ID = process.env.GOOGLE_SHEET_ID || "1YnLByK8mr5e-qtKsQxPKuirhxm-1J1QK4F4fxG2Yi3Q";
-const CAJA_CHICA_GID = process.env.CAJA_CHICA_GID || "968865594";
-const FONDO_AHORRO_GID = process.env.FONDO_AHORRO_GID || "410879135";
+const SHEET_ID = process.env.GOOGLE_SHEET_ID ?? "";
+const CAJA_CHICA_GID = process.env.CAJA_CHICA_GID ?? "";
+const FONDO_AHORRO_GID = process.env.FONDO_AHORRO_GID ?? "";
 
 const FUND_CODE_BY_SHEET: Record<SheetFundKey, string> = {
   caja_chica: "CAJA_CHICA",

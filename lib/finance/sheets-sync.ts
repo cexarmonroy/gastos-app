@@ -4,9 +4,9 @@ import { inferCategoryCode } from "@/lib/category-inference";
 import { ORG_SLUG, TAB_TO_FUND_CODE, type FundTab } from "@/lib/finance/types";
 import { buildExternalRef, parseSheetRows, type SheetFundKey } from "@/lib/sheet-parser";
 
-export const SHEET_ID = process.env.GOOGLE_SHEET_ID || "1YnLByK8mr5e-qtKsQxPKuirhxm-1J1QK4F4fxG2Yi3Q";
-export const CAJA_CHICA_GID = process.env.CAJA_CHICA_GID || "968865594";
-export const FONDO_AHORRO_GID = process.env.FONDO_AHORRO_GID || "410879135";
+export const SHEET_ID = process.env.GOOGLE_SHEET_ID ?? "";
+export const CAJA_CHICA_GID = process.env.CAJA_CHICA_GID ?? "";
+export const FONDO_AHORRO_GID = process.env.FONDO_AHORRO_GID ?? "";
 
 const FUND_CODE_BY_SHEET: Record<SheetFundKey, string> = {
   caja_chica: "CAJA_CHICA",

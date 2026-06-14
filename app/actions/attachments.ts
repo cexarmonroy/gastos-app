@@ -1,9 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
 import { AttachmentType, AuditAction } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
+import { assertAuthenticated, assertCanWrite } from "@/lib/auth-guards";
 import { ORG_SLUG } from "@/lib/finance/types";
 import { prisma } from "@/lib/prisma";
 import {
@@ -13,6 +12,10 @@ import {
   getStorageBucket,
   isStorageConfigured,
 } from "@/lib/supabase/storage";
+import { validateFileContent } from "@/lib/file-validation";
+import { toClientError } from "@/lib/safe-error";
+import { parseInput } from "@/lib/validations/parse";
+import { attachmentIdSchema, attachmentUploadSchema } from "@/lib/validations/schemas";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set([
@@ -43,18 +46,8 @@ async function getOrganizationId() {
   return organization.id;
 }
 
-async function assertCanWrite() {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role;
-
-  if (!session?.user?.id || (role !== "ADMIN" && role !== "DIRECTIVA")) {
-    throw new Error("No tienes permisos para gestionar adjuntos.");
-  }
-
-  return session.user.id;
-}
-
 export async function getStorageStatus() {
+  await assertAuthenticated();
   return { configured: isStorageConfigured(), bucket: getStorageBucket() };
 }
 
@@ -92,15 +85,16 @@ export async function uploadMovementAttachment(formData: FormData) {
     const userId = await assertCanWrite();
     const organizationId = await getOrganizationId();
     const movementId = String(formData.get("movementId") ?? "");
-    const attachmentType = String(formData.get("attachmentType") ?? "OTHER") as AttachmentType;
+    const attachmentType = String(formData.get("attachmentType") ?? "OTHER");
     const file = formData.get("file");
 
-    if (!movementId || !(file instanceof File)) {
-      return { success: false as const, error: "Archivo o movimiento inválido." };
-    }
+    const validated = parseInput(attachmentUploadSchema, {
+      movementId,
+      attachmentType,
+    });
 
-    if (!Object.values(AttachmentType).includes(attachmentType)) {
-      return { success: false as const, error: "Tipo de evidencia inválido." };
+    if (!(file instanceof File)) {
+      return { success: false as const, error: "Archivo o movimiento inválido." };
     }
 
     if (file.size > MAX_FILE_SIZE) {
@@ -115,7 +109,7 @@ export async function uploadMovementAttachment(formData: FormData) {
     }
 
     const movement = await prisma.movement.findFirst({
-      where: { id: movementId, organizationId, deletedAt: null },
+      where: { id: validated.movementId, organizationId, deletedAt: null },
       select: { id: true },
     });
 
@@ -123,13 +117,19 @@ export async function uploadMovementAttachment(formData: FormData) {
       return { success: false as const, error: "Movimiento no encontrado." };
     }
 
-    const storagePath = buildStoragePath(ORG_SLUG, movementId, file.name);
+    const storagePath = buildStoragePath(ORG_SLUG, validated.movementId, file.name);
     const buffer = Buffer.from(await file.arrayBuffer());
+    const fileValidation = validateFileContent(new Uint8Array(buffer), file.type);
+
+    if (!fileValidation.valid) {
+      return { success: false as const, error: fileValidation.error };
+    }
+
     const supabase = getStorageAdmin();
 
     const { error: uploadError } = await supabase.storage
       .from(getStorageBucket())
-      .upload(storagePath, buffer, { contentType: file.type, upsert: false });
+      .upload(storagePath, buffer, { contentType: fileValidation.mimeType, upsert: false });
 
     if (uploadError) {
       throw new Error(uploadError.message);
@@ -138,12 +138,12 @@ export async function uploadMovementAttachment(formData: FormData) {
     const attachment = await prisma.attachment.create({
       data: {
         organizationId,
-        movementId,
+        movementId: validated.movementId,
         fileName: file.name,
         storagePath,
-        mimeType: file.type,
+        mimeType: fileValidation.mimeType,
         fileSize: file.size,
-        attachmentType,
+        attachmentType: validated.attachmentType,
         uploadedById: userId,
       },
     });
@@ -156,9 +156,9 @@ export async function uploadMovementAttachment(formData: FormData) {
         entity: "attachments",
         entityId: attachment.id,
         newValues: {
-          movementId,
+          movementId: validated.movementId,
           fileName: file.name,
-          attachmentType,
+          attachmentType: validated.attachmentType,
           fileSize: file.size,
         },
       },
@@ -172,7 +172,7 @@ export async function uploadMovementAttachment(formData: FormData) {
     console.error("Error uploading attachment:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error al subir el archivo.",
+      error: toClientError(error, "Error al subir el archivo."),
     };
   }
 }
@@ -183,11 +183,12 @@ export async function deleteMovementAttachment(attachmentId: string) {
       return { success: false as const, error: "Supabase Storage no está configurado." };
     }
 
+    const { attachmentId: id } = parseInput(attachmentIdSchema, { attachmentId });
     const userId = await assertCanWrite();
     const organizationId = await getOrganizationId();
 
     const attachment = await prisma.attachment.findFirst({
-      where: { id: attachmentId, organizationId },
+      where: { id, organizationId },
     });
 
     if (!attachment) {
@@ -222,18 +223,19 @@ export async function deleteMovementAttachment(attachmentId: string) {
     console.error("Error deleting attachment:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error al eliminar el adjunto.",
+      error: toClientError(error, "Error al eliminar el adjunto."),
     };
   }
 }
 
 export async function getAttachmentDownloadUrl(attachmentId: string) {
   try {
+    const { attachmentId: id } = parseInput(attachmentIdSchema, { attachmentId });
     await assertCanWrite();
     const organizationId = await getOrganizationId();
 
     const attachment = await prisma.attachment.findFirst({
-      where: { id: attachmentId, organizationId },
+      where: { id, organizationId },
       select: { storagePath: true, fileName: true },
     });
 
@@ -246,11 +248,12 @@ export async function getAttachmentDownloadUrl(attachmentId: string) {
   } catch (error) {
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "No se pudo descargar el archivo.",
+      error: toClientError(error, "No se pudo descargar el archivo."),
     };
   }
 }
 
 export async function getAttachmentTypeOptions() {
+  await assertAuthenticated();
   return Object.entries(ATTACHMENT_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 }

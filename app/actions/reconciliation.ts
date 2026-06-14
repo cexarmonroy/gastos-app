@@ -1,15 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
 import { AuditAction, ReconciliationStatus } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
+import { assertCanManage } from "@/lib/auth-guards";
 import { ORG_SLUG } from "@/lib/finance/types";
 import {
   importMissingMovementsFromSheets,
   reconcileOrganizationFunds,
 } from "@/lib/finance/sheets-sync";
 import { prisma } from "@/lib/prisma";
+import { toClientError } from "@/lib/safe-error";
 
 async function getOrganizationId() {
   const organization = await prisma.organization.findUnique({
@@ -24,22 +24,8 @@ async function getOrganizationId() {
   return organization.id;
 }
 
-async function assertCanManage() {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role;
-
-  if (!session?.user?.id) {
-    throw new Error("Debes iniciar sesión.");
-  }
-
-  if (role !== "ADMIN" && role !== "DIRECTIVA") {
-    throw new Error("No tienes permisos para esta acción.");
-  }
-
-  return session.user.id;
-}
-
 export async function getReconciliationHistory() {
+  await assertCanManage();
   const organizationId = await getOrganizationId();
 
   const logs = await prisma.reconciliationLog.findMany({
@@ -90,7 +76,7 @@ export async function runReconciliationCheck() {
   } catch (error) {
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }
@@ -153,12 +139,13 @@ export async function runSheetsImport() {
   } catch (error) {
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: toClientError(error),
     };
   }
 }
 
 export async function getCurrentReconciliationSnapshot() {
+  await assertCanManage();
   const organizationId = await getOrganizationId();
   return reconcileOrganizationFunds(prisma, organizationId);
 }

@@ -2,7 +2,22 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./prisma";
+import { rateLimit } from "./rate-limit";
 import bcrypt from "bcryptjs";
+
+const LOGIN_RATE_MAX = 10;
+const LOGIN_RATE_WINDOW_MS = 15 * 60 * 1000;
+
+function isEmailDomainAllowed(email: string): boolean {
+  const allowedDomains = process.env.AUTH_ALLOWED_EMAIL_DOMAINS?.split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (!allowedDomains?.length) return true;
+
+  const domain = email.split("@")[1]?.toLowerCase();
+  return Boolean(domain && allowedDomains.includes(domain));
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,12 +31,18 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
-        
+
+        const email = credentials.email.toLowerCase();
+
+        if (rateLimit(`login:${email}`, LOGIN_RATE_MAX, LOGIN_RATE_WINDOW_MS)) {
+          throw new Error("Demasiados intentos de inicio de sesión. Intenta en 15 minutos.");
+        }
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         });
 
-        if (!user) {
+        if (!user || !user.password) {
           return null;
         }
 
@@ -47,32 +68,42 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email! },
-        });
-        token.role = dbUser?.role || "USER";
-        token.id = dbUser?.id || user.id;
+        token.id = user.id;
+        token.role = user.role;
+        token.email = user.email;
       }
+
+      if (token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          select: { id: true, role: true },
+        });
+
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+        }
+      }
+
       return token;
     },
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === "google") {
+        const email = user.email;
+        if (!email) return false;
+
+        if (!isEmailDomainAllowed(email)) {
+          return false;
+        }
+
         const existingUser = await prisma.user.findUnique({
-          where: { email: user.email! },
+          where: { email },
         });
 
         if (!existingUser) {
-          // Si el usuario no existe, crearlo con un rol predeterminado
-          // La contraseña se deja vacía o con un valor aleatorio ya que usará Google
-          await prisma.user.create({
-            data: {
-              email: user.email!,
-              password: "", // No se usa para Google
-              role: "USER",
-            },
-          });
+          return false;
         }
       }
       return true;
@@ -87,7 +118,10 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 8 * 60 * 60,
+    updateAge: 60 * 60,
   },
+  useSecureCookies: process.env.NODE_ENV === "production",
   pages: {
     signIn: "/",
   },

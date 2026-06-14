@@ -66,12 +66,24 @@ NEXTAUTH_URL="http://localhost:3001"
 
 # Google Sheets Integration
 GOOGLE_SHEET_ID="id_de_tu_hoja_de_calculo"
+INSCRIPCIONES_SHEET_ID="id_hoja_inscripciones"
 CAJA_CHICA_GID="gid_especifico_hoja"
 FONDO_AHORRO_GID="gid_especifico_hoja"
 
-# Google API Service Account (JSON string o file path)
-GOOGLE_CLIENT_EMAIL="tu_cuenta_de_servicio"
-GOOGLE_PRIVATE_KEY="tu_llave_privada"
+# Google API Service Account
+GOOGLE_SERVICE_ACCOUNT_EMAIL="tu_cuenta_de_servicio"
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="tu_llave_privada"
+
+# Auth — dominios permitidos para OAuth (separados por coma, opcional)
+AUTH_ALLOWED_EMAIL_DOMAINS="gmail.com,escuela.cl"
+
+# Producción: asegúrate de usar HTTPS y NEXTAUTH_URL con https://
+
+# Portal público de transparencia (false = cerrado, requiere login para /portal)
+PUBLIC_PORTAL_ENABLED=false
+
+# Dominios permitidos para login con Google (opcional, separados por coma)
+AUTH_ALLOWED_EMAIL_DOMAINS="gmail.com,escuela.cl"
 ```
 
 ### 3. Base de Datos e Inicio

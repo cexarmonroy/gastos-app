@@ -1,8 +1,7 @@
 "use server";
 
-import { getServerSession } from "next-auth";
-import { AuditAction } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
+import { AuditAction, Role } from "@prisma/client";
+import { assertRole } from "@/lib/auth-guards";
 import { ORG_SLUG } from "@/lib/finance/types";
 import { prisma } from "@/lib/prisma";
 
@@ -27,13 +26,7 @@ async function getOrganizationId() {
 }
 
 export async function getAuditLogs(filters: AuditLogFilters = {}) {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role;
-
-  if (role !== "ADMIN" && role !== "DIRECTIVA") {
-    throw new Error("No tienes permisos para ver la auditoría.");
-  }
-
+  await assertRole(Role.ADMIN, Role.DIRECTIVA);
   const organizationId = await getOrganizationId();
   const search = filters.search?.trim();
 
@@ -72,13 +65,7 @@ export async function getAuditLogs(filters: AuditLogFilters = {}) {
 }
 
 export async function getAuditFilterOptions() {
-  const session = await getServerSession(authOptions);
-  const role = session?.user?.role;
-
-  if (role !== "ADMIN" && role !== "DIRECTIVA") {
-    throw new Error("No tienes permisos para ver la auditoría.");
-  }
-
+  await assertRole(Role.ADMIN, Role.DIRECTIVA);
   const organizationId = await getOrganizationId();
   const entities = await prisma.auditLog.findMany({
     where: { organizationId },
