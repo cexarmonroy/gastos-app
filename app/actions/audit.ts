@@ -79,3 +79,27 @@ export async function getAuditFilterOptions() {
     entities: entities.map((item) => item.entity),
   };
 }
+
+export async function getRecentAuditLogs(limit = 8) {
+  await assertRole(Role.ADMIN, Role.DIRECTIVA);
+  const organizationId = await getOrganizationId();
+
+  const logs = await prisma.auditLog.findMany({
+    where: { organizationId },
+    include: { user: { select: { email: true } } },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+
+  return logs.map((log) => ({
+    id: log.id,
+    action: log.action,
+    entity: log.entity,
+    entityId: log.entityId,
+    userEmail: log.user?.email ?? "Sistema",
+    oldValues: log.oldValues,
+    newValues: log.newValues,
+    metadata: log.metadata,
+    createdAt: log.createdAt.toISOString(),
+  }));
+}

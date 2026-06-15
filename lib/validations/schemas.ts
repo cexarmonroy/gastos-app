@@ -29,8 +29,15 @@ export const applyCategorySuggestionSchema = z.object({
   categoryId: z.string().uuid("ID de categoría inválido."),
 });
 
-export const voidMovementSchema = z.object({
-  id: z.string().uuid("ID de movimiento inválido."),
+export const bulkCategorySuggestionSchema = z.object({
+  movementIds: z.array(z.string().uuid()).min(1, "Selecciona al menos un movimiento."),
+  categoryId: z.string().uuid("ID de categoría inválido."),
+});
+
+export const attachmentUploadSchema = z.object({
+  movementId: z.string().uuid("ID de movimiento inválido."),
+  attachmentType: z.nativeEnum(AttachmentType),
+  supersedesId: optionalUuid,
 });
 
 export const createEventSchema = z.object({
@@ -84,9 +91,8 @@ export const updateUserRoleSchema = z.object({
   role: z.nativeEnum(Role),
 });
 
-export const attachmentUploadSchema = z.object({
-  movementId: z.string().uuid("ID de movimiento inválido."),
-  attachmentType: z.nativeEnum(AttachmentType),
+export const voidMovementSchema = z.object({
+  id: z.string().uuid("ID de movimiento inválido."),
 });
 
 export const attachmentIdSchema = z.object({

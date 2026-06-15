@@ -14,6 +14,7 @@ import {
 } from "@/lib/supabase/storage";
 import { validateFileContent } from "@/lib/file-validation";
 import { toClientError } from "@/lib/safe-error";
+import { logDataExport } from "@/lib/security-audit";
 import { parseInput } from "@/lib/validations/parse";
 import { attachmentIdSchema, attachmentUploadSchema } from "@/lib/validations/schemas";
 
@@ -70,6 +71,8 @@ export async function getMovementAttachments(movementId: string) {
     attachmentTypeLabel: ATTACHMENT_TYPE_LABELS[item.attachmentType],
     uploadedByEmail: item.uploadedBy?.email ?? "Sistema",
     createdAt: item.createdAt.toISOString(),
+    version: item.version,
+    supersedesId: item.supersedesId,
   }));
 }
 
@@ -86,11 +89,13 @@ export async function uploadMovementAttachment(formData: FormData) {
     const organizationId = await getOrganizationId();
     const movementId = String(formData.get("movementId") ?? "");
     const attachmentType = String(formData.get("attachmentType") ?? "OTHER");
+    const supersedesId = String(formData.get("supersedesId") ?? "") || undefined;
     const file = formData.get("file");
 
     const validated = parseInput(attachmentUploadSchema, {
       movementId,
       attachmentType,
+      supersedesId,
     });
 
     if (!(file instanceof File)) {
@@ -115,6 +120,23 @@ export async function uploadMovementAttachment(formData: FormData) {
 
     if (!movement) {
       return { success: false as const, error: "Movimiento no encontrado." };
+    }
+
+    let version = 1;
+    if (validated.supersedesId) {
+      const parent = await prisma.attachment.findFirst({
+        where: {
+          id: validated.supersedesId,
+          organizationId,
+          movementId: validated.movementId,
+        },
+      });
+
+      if (!parent) {
+        return { success: false as const, error: "Adjunto anterior no encontrado." };
+      }
+
+      version = parent.version + 1;
     }
 
     const storagePath = buildStoragePath(ORG_SLUG, validated.movementId, file.name);
@@ -144,6 +166,8 @@ export async function uploadMovementAttachment(formData: FormData) {
         mimeType: fileValidation.mimeType,
         fileSize: file.size,
         attachmentType: validated.attachmentType,
+        version,
+        supersedesId: validated.supersedesId ?? null,
         uploadedById: userId,
       },
     });
@@ -160,6 +184,8 @@ export async function uploadMovementAttachment(formData: FormData) {
           fileName: file.name,
           attachmentType: validated.attachmentType,
           fileSize: file.size,
+          version,
+          supersedesId: validated.supersedesId ?? null,
         },
       },
     });
@@ -177,71 +203,35 @@ export async function uploadMovementAttachment(formData: FormData) {
   }
 }
 
-export async function deleteMovementAttachment(attachmentId: string) {
-  try {
-    if (!isStorageConfigured()) {
-      return { success: false as const, error: "Supabase Storage no está configurado." };
-    }
+export async function deleteMovementAttachment(_attachmentId: string) {
+  return {
+    success: false as const,
+    error: "Las evidencias no pueden eliminarse. Sube una nueva versión si necesitas reemplazarla.",
+  };
+}
 
+export async function getAttachmentDownloadUrl(attachmentId: string) {
+  try {
     const { attachmentId: id } = parseInput(attachmentIdSchema, { attachmentId });
     const userId = await assertCanWrite();
     const organizationId = await getOrganizationId();
 
     const attachment = await prisma.attachment.findFirst({
       where: { id, organizationId },
+      select: { storagePath: true, fileName: true, movementId: true, mimeType: true },
     });
 
     if (!attachment) {
       return { success: false as const, error: "Adjunto no encontrado." };
     }
 
-    const supabase = getStorageAdmin();
-    await supabase.storage.from(getStorageBucket()).remove([attachment.storagePath]);
-
-    await prisma.attachment.delete({ where: { id: attachment.id } });
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId,
-        userId,
-        action: AuditAction.DELETE,
-        entity: "attachments",
-        entityId: attachment.id,
-        oldValues: {
-          movementId: attachment.movementId,
-          fileName: attachment.fileName,
-          attachmentType: attachment.attachmentType,
-        },
-      },
+    await logDataExport(userId, {
+      entity: "attachments",
+      format: "download",
+      fileName: attachment.fileName,
+      movementId: attachment.movementId,
+      mimeType: attachment.mimeType,
     });
-
-    revalidatePath("/records");
-    revalidatePath("/audit");
-
-    return { success: true as const };
-  } catch (error) {
-    console.error("Error deleting attachment:", error);
-    return {
-      success: false as const,
-      error: toClientError(error, "Error al eliminar el adjunto."),
-    };
-  }
-}
-
-export async function getAttachmentDownloadUrl(attachmentId: string) {
-  try {
-    const { attachmentId: id } = parseInput(attachmentIdSchema, { attachmentId });
-    await assertCanWrite();
-    const organizationId = await getOrganizationId();
-
-    const attachment = await prisma.attachment.findFirst({
-      where: { id, organizationId },
-      select: { storagePath: true, fileName: true },
-    });
-
-    if (!attachment) {
-      return { success: false as const, error: "Adjunto no encontrado." };
-    }
 
     const url = await createSignedDownloadUrl(attachment.storagePath);
     return { success: true as const, url, fileName: attachment.fileName };

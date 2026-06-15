@@ -6,9 +6,11 @@ import { assertAuthenticated, assertCanWrite } from "@/lib/auth-guards";
 import { labelToMovementType, toMovementRecord } from "@/lib/finance/map-movement";
 import { exportRecordToSheets } from "@/lib/finance/sheets-export";
 import { toClientError } from "@/lib/safe-error";
+import { logDataExport } from "@/lib/security-audit";
 import { parseInput } from "@/lib/validations/parse";
 import {
   applyCategorySuggestionSchema,
+  bulkCategorySuggestionSchema,
   createMovementSchema,
   updateMovementSchema,
   voidMovementSchema,
@@ -490,6 +492,110 @@ export async function applyCategorySuggestion(movementId: string, categoryId: st
   }
 }
 
+export async function applyBulkCategorySuggestion(movementIds: string[], categoryId: string) {
+  try {
+    const userId = await assertCanWrite();
+    const { movementIds: ids, categoryId: catId } = parseInput(bulkCategorySuggestionSchema, {
+      movementIds,
+      categoryId,
+    });
+    const organizationId = await getOrganizationId();
+
+    const category = await prisma.category.findFirst({
+      where: { id: catId, organizationId, active: true },
+    });
+
+    if (!category) {
+      throw new Error("Categoría no encontrada.");
+    }
+
+    const movements = await prisma.movement.findMany({
+      where: { id: { in: ids }, organizationId, deletedAt: null },
+      include: { fund: true, category: true, event: true, project: true },
+    });
+
+    if (movements.length === 0) {
+      throw new Error("No se encontraron movimientos válidos.");
+    }
+
+    const eligible = movements.filter((m) => !m.transferId);
+    if (eligible.length === 0) {
+      throw new Error("Las transferencias no llevan categoría contable.");
+    }
+
+    const expectedType =
+      eligible[0].movementType === MovementType.INCOME ? CategoryType.INCOME : CategoryType.EXPENSE;
+
+    const allSameType = eligible.every((m) => m.movementType === eligible[0].movementType);
+    if (!allSameType) {
+      throw new Error("Todos los movimientos deben ser del mismo tipo (ingreso o egreso).");
+    }
+
+    if (category.type !== expectedType) {
+      throw new Error("La categoría no corresponde al tipo de movimiento.");
+    }
+
+    const updatedRecords: MovementRecord[] = [];
+
+    await prisma.$transaction(async (tx) => {
+      for (const existing of eligible) {
+        const oldSnapshot = movementAuditSnapshot(existing);
+
+        const movement = await tx.movement.update({
+          where: { id: existing.id },
+          data: { categoryId: catId, updatedById: userId },
+          include: { fund: true, category: true, event: true, project: true },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            organizationId,
+            userId,
+            action: AuditAction.UPDATE,
+            entity: "movements",
+            entityId: movement.id,
+            oldValues: oldSnapshot,
+            newValues: movementAuditSnapshot(movement),
+            metadata: { source: "bulk_category" },
+          },
+        });
+
+        updatedRecords.push(toMovementRecord(movement));
+      }
+
+      await tx.auditLog.create({
+        data: {
+          organizationId,
+          userId,
+          action: AuditAction.UPDATE,
+          entity: "movements",
+          entityId: organizationId,
+          metadata: {
+            bulk: true,
+            count: eligible.length,
+            categoryId: catId,
+            categoryName: category.name,
+            movementIds: eligible.map((m) => m.id),
+          },
+        },
+      });
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/records");
+    revalidatePath("/reports");
+    revalidatePath("/audit");
+
+    return { success: true as const, count: eligible.length, records: updatedRecords };
+  } catch (error) {
+    console.error("Error applying bulk category:", error);
+    return {
+      success: false as const,
+      error: toClientError(error),
+    };
+  }
+}
+
 export async function voidMovement(id: string) {
   try {
     const userId = await assertCanWrite();
@@ -545,19 +651,7 @@ export async function voidMovement(id: string) {
 export async function logReportExport(metadata: Record<string, unknown>) {
   try {
     const userId = await assertCanWrite();
-    const organizationId = await getOrganizationId();
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId,
-        userId,
-        action: AuditAction.EXPORT,
-        entity: "reports",
-        entityId: organizationId,
-        metadata: metadata as Prisma.InputJsonValue,
-      },
-    });
-
+    await logDataExport(userId, { entity: "reports", ...metadata });
     return { success: true as const };
   } catch (error) {
     return {

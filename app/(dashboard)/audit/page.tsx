@@ -10,6 +10,7 @@ import {
   auditSnapshotToLines,
   formatAuditEntity,
 } from "@/lib/audit-labels";
+import { formatAuditNarrative } from "@/lib/audit-narrative";
 
 type AuditLogItem = Awaited<ReturnType<typeof getAuditLogs>>[number];
 
@@ -154,11 +155,14 @@ export default function AuditPage() {
                         <span className="text-sm text-white/80">{formatAuditEntity(log.entity)}</span>
                         <span className="text-xs text-white/30 font-mono truncate">{log.entityId.slice(0, 8)}…</span>
                       </div>
+                      <p className="text-sm text-white/90 leading-snug mb-1">
+                        {formatAuditNarrative(log)}
+                      </p>
                       <p className="text-xs text-white/50">
                         {log.userEmail} · {format(new Date(log.createdAt), "dd MMM yyyy HH:mm", { locale: es })}
                       </p>
                       {!isExpanded && newLines[0] && (
-                        <p className="text-xs text-white/40 mt-1 truncate">{newLines[0]}</p>
+                        <p className="text-xs text-white/30 mt-1 truncate">{newLines[0]}</p>
                       )}
                     </div>
                     {isExpanded ? (

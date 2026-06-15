@@ -41,6 +41,8 @@ enum AuditAction {
   DELETE
   EXPORT
   IMPORT
+  LOGIN_FAILED
+  SECURITY_ALERT
 }
 
 enum AttachmentType {
@@ -264,12 +266,16 @@ model Attachment {
   mimeType       String
   fileSize       Int
   attachmentType AttachmentType @default(OTHER)
+  version        Int            @default(1)
+  supersedesId   String?
   uploadedById   String?
   createdAt      DateTime       @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   movement     Movement     @relation(fields: [movementId], references: [id], onDelete: Cascade)
   uploadedBy   User?        @relation(fields: [uploadedById], references: [id])
+  supersedes   Attachment?  @relation("AttachmentVersions", fields: [supersedesId], references: [id], onDelete: SetNull)
+  revisions    Attachment[] @relation("AttachmentVersions")
 
   @@index([movementId])
   @@index([organizationId, createdAt])

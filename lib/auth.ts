@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./prisma";
 import { rateLimit } from "./rate-limit";
+import { logSecurityEvent } from "./security-audit";
 import bcrypt from "bcryptjs";
 
 const LOGIN_RATE_MAX = 10;
@@ -35,6 +36,7 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase();
 
         if (rateLimit(`login:${email}`, LOGIN_RATE_MAX, LOGIN_RATE_WINDOW_MS)) {
+          await logSecurityEvent("LOGIN_BLOCKED", { email, reason: "rate_limit" });
           throw new Error("Demasiados intentos de inicio de sesión. Intenta en 15 minutos.");
         }
 
@@ -43,6 +45,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.password) {
+          await logSecurityEvent("LOGIN_FAILED", { email, reason: "invalid_credentials" });
           return null;
         }
 
@@ -52,6 +55,7 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
+          await logSecurityEvent("LOGIN_FAILED", { email, reason: "invalid_password" });
           return null;
         }
 
@@ -107,6 +111,11 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!existingUser) {
+          await logSecurityEvent("LOGIN_FAILED", {
+            email,
+            reason: "oauth_not_registered",
+            provider: "google",
+          });
           return false;
         }
       }

@@ -26,9 +26,11 @@ import { RecordModal } from "@/components/ui/RecordModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
+  applyBulkCategorySuggestion,
   applyCategorySuggestion,
   fetchMovementsData,
   getAllCategoryOptions,
+  logReportExport,
   voidMovement,
 } from "@/app/actions/movements";
 import { getEventOptions } from "@/app/actions/events";
@@ -77,9 +79,12 @@ export default function RecordsPage() {
   const [eventFilter, setEventFilter] = useState<string>("");
   const [events, setEvents] = useState<EventOption[]>([]);
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkCategoryId, setBulkCategoryId] = useState("");
+  const [isBulkApplying, setIsBulkApplying] = useState(false);
 
   const isAdminOrDirectiva = session?.user?.role === "ADMIN" || session?.user?.role === "DIRECTIVA";
-  const tableColSpan = isAdminOrDirectiva ? 8 : 7;
+  const tableColSpan = isAdminOrDirectiva ? 9 : 7;
 
   useEffect(() => {
     loadRecords();
@@ -153,6 +158,13 @@ export default function RecordsPage() {
     });
 
     doc.save(`Reporte_Registros_${format(new Date(), "dd-MM-yyyy")}.pdf`);
+
+    await logReportExport({
+      format: "pdf",
+      source: "records",
+      fund: activeTab,
+      recordCount: filteredRecords.length,
+    });
   };
 
   const handleSort = (field: SortField) => {
@@ -308,6 +320,65 @@ export default function RecordsPage() {
   }, [tabRecords, allCategories]);
 
   const suggestionCount = suggestionMap.size;
+
+  const selectableRecords = useMemo(
+    () => displayedRecords.filter((r) => !r.transferId),
+    [displayedRecords]
+  );
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === selectableRecords.length && selectableRecords.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectableRecords.map((r) => r.id)));
+    }
+  };
+
+  const handleBulkApply = async () => {
+    if (!bulkCategoryId || selectedIds.size === 0) return;
+
+    setIsBulkApplying(true);
+    const result = await applyBulkCategorySuggestion(Array.from(selectedIds), bulkCategoryId);
+    if (result.success) {
+      setRecords((prev) => {
+        const updatedMap = new Map(result.records.map((r) => [r.id, r]));
+        return prev.map((r) => {
+          const updated = updatedMap.get(r.id);
+          return updated ? { ...r, ...updated, date: new Date(updated.date) } : r;
+        });
+      });
+      setSelectedIds(new Set());
+      setBulkCategoryId("");
+    } else {
+      alert(result.error);
+    }
+    setIsBulkApplying(false);
+  };
+
+  const bulkTypeMismatch = useMemo(() => {
+    if (selectedIds.size === 0) return false;
+    const selected = displayedRecords.filter((r) => selectedIds.has(r.id));
+    const types = new Set(selected.map((r) => r.type));
+    return types.size > 1;
+  }, [selectedIds, displayedRecords]);
+
+  const bulkCategories = useMemo(() => {
+    if (selectedIds.size === 0) return allCategories;
+    const selected = displayedRecords.filter((r) => selectedIds.has(r.id));
+    const type = selected[0]?.type;
+    if (!type || bulkTypeMismatch) return [];
+    const catType = type === "Ingreso" ? "INCOME" : "EXPENSE";
+    return allCategories.filter((c) => c.type === catType);
+  }, [selectedIds, displayedRecords, allCategories, bulkTypeMismatch]);
 
   const clearDateFilter = () => {
     setStartDate("");
@@ -595,6 +666,46 @@ export default function RecordsPage() {
         )}
       </div>
 
+      {isAdminOrDirectiva && selectedIds.size > 0 && (
+        <div className="glass-panel p-4 mb-4 border border-primary/20 bg-primary/5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <p className="text-sm font-medium">
+            {selectedIds.size} {selectedIds.size === 1 ? "movimiento seleccionado" : "movimientos seleccionados"}
+          </p>
+          {bulkTypeMismatch ? (
+            <p className="text-xs text-accent">Selecciona movimientos del mismo tipo (ingreso o egreso).</p>
+          ) : (
+            <>
+              <select
+                value={bulkCategoryId}
+                onChange={(e) => setBulkCategoryId(e.target.value)}
+                className="select-premium text-sm flex-1 sm:max-w-xs"
+              >
+                <option value="">Elegir categoría...</option>
+                {bulkCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleBulkApply}
+                disabled={!bulkCategoryId || isBulkApplying}
+                className="btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isBulkApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Aplicar categoría
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="btn-secondary text-sm sm:ml-auto"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
       {/* Tabla responsive — scroll horizontal en móvil */}
       <div className="glass-panel flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
         <p className="md:hidden px-3 pt-3 text-[11px] text-white/40">
@@ -604,6 +715,20 @@ export default function RecordsPage() {
           <table className="w-full min-w-[640px] text-xs md:text-sm text-left border-collapse">
             <thead className="text-xs uppercase bg-[#0f1115] border-b border-white/10 sticky top-0 z-10">
               <tr>
+                {isAdminOrDirectiva && (
+                  <th className="px-2 md:px-4 py-3 md:py-4 font-semibold text-white/80 w-10">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectableRecords.length > 0 &&
+                        selectedIds.size === selectableRecords.length
+                      }
+                      onChange={toggleSelectAll}
+                      className="rounded border-white/20 bg-white/5"
+                      title="Seleccionar todos"
+                    />
+                  </th>
+                )}
                 <th 
                   className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
                   onClick={() => handleSort("date")}
@@ -699,6 +824,18 @@ export default function RecordsPage() {
                   const suggestion = suggestionMap.get(record.id);
                   return (
                   <tr key={record.id} className="hover:bg-white/5 transition-colors group">
+                    {isAdminOrDirectiva && (
+                      <td className="px-2 md:px-4 py-3 md:py-4">
+                        {!record.transferId ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(record.id)}
+                            onChange={() => toggleSelect(record.id)}
+                            className="rounded border-white/20 bg-white/5"
+                          />
+                        ) : null}
+                      </td>
+                    )}
                     <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-white/80 text-[10px] md:text-sm">
                       <span className="md:hidden">{format(record.date, "dd/MM/yy")}</span>
                       <span className="hidden md:inline">{format(record.date, "dd MMM, yyyy", { locale: es })}</span>

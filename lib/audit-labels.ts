@@ -4,6 +4,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   DELETE: "Anuló / eliminó",
   EXPORT: "Exportó",
   IMPORT: "Importó",
+  LOGIN_FAILED: "Login fallido",
+  SECURITY_ALERT: "Alerta de seguridad",
 };
 
 export const AUDIT_ENTITY_LABELS: Record<string, string> = {
@@ -12,6 +14,9 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   transfers: "Transferencia",
   projects: "Proyecto",
   events: "Actividad",
+  users: "Usuario",
+  auth: "Autenticación",
+  exports: "Exportación",
   reconciliation: "Conciliación",
 };
 

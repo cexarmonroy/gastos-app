@@ -48,10 +48,13 @@ import {
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { RecentActivityPanel } from "@/components/dashboard/RecentActivityPanel";
 
 type ChartMode = "flow" | "balance";
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
   const [records, setRecords] = useState<MovementRecord[]>([]);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
@@ -141,6 +144,9 @@ export default function DashboardPage() {
 
   const formatM = (val: number) =>
     "$" + val.toLocaleString("es-CL", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  const isAdminOrDirectiva =
+    session?.user?.role === "ADMIN" || session?.user?.role === "DIRECTIVA";
 
   const positionStats = [
     {
@@ -433,6 +439,12 @@ export default function DashboardPage() {
               </Link>
             </div>
           )}
+        </div>
+      )}
+
+      {isAdminOrDirectiva && (
+        <div className="mb-6 md:mb-8">
+          <RecentActivityPanel />
         </div>
       )}
 

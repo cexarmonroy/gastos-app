@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 import { getAuthToken } from "@/lib/auth-token";
 import { isPublicPortalEnabled } from "@/lib/public-portal";
 import { rateLimit } from "@/lib/rate-limit";
@@ -17,11 +17,33 @@ function getClientIp(req: NextRequest): string {
   );
 }
 
-export async function middleware(req: NextRequest) {
+function queueSecurityAudit(req: NextRequest, event: NextFetchEvent, metadata: Record<string, unknown>) {
+  if (!process.env.NEXTAUTH_SECRET) return;
+
+  const auditUrl = new URL("/api/internal/security-audit", req.url);
+  event.waitUntil(
+    fetch(auditUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-audit-secret": process.env.NEXTAUTH_SECRET,
+      },
+      body: JSON.stringify({ event: "RATE_LIMIT", metadata }),
+    }).catch(() => undefined)
+  );
+}
+
+export async function middleware(req: NextRequest, event: NextFetchEvent) {
   const { pathname } = req.nextUrl;
 
+  if (pathname.startsWith("/api/internal/security-audit")) {
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith("/api/auth")) {
-    if (rateLimit(`auth:${getClientIp(req)}`, AUTH_RATE_MAX, AUTH_RATE_WINDOW_MS)) {
+    const ip = getClientIp(req);
+    if (rateLimit(`auth:${ip}`, AUTH_RATE_MAX, AUTH_RATE_WINDOW_MS)) {
+      queueSecurityAudit(req, event, { ip, path: pathname, source: "api_auth" });
       return NextResponse.json(
         { error: "Demasiados intentos. Espera unos minutos." },
         { status: 429 }
