@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Calendar as CalendarIcon, AlignLeft, DollarSign, ArrowRightLeft } from "lucide-react";
 import { createTransfer } from "@/app/actions/transfers";
+import { todayDateInputValue } from "@/lib/date-only";
 import type { FundTab } from "@/lib/finance/types";
 
 interface TransferModalProps {
@@ -17,7 +18,7 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
     fromFund: "caja_chica" as FundTab,
     toFund: "fondo_ahorro" as FundTab,
     amount: "",
-    date: new Date().toISOString().split("T")[0],
+    date: todayDateInputValue(),
     description: "",
   });
 
@@ -42,7 +43,7 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
         fromFund: "caja_chica",
         toFund: "fondo_ahorro",
         amount: "",
-        date: new Date().toISOString().split("T")[0],
+        date: todayDateInputValue(),
         description: "",
       });
     } else {

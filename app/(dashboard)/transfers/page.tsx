@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate } from "@/lib/date-only";
 import { ArrowRightLeft, Plus } from "lucide-react";
 import { fetchTransfers } from "@/app/actions/transfers";
 import { TransferModal } from "@/components/ui/TransferModal";
@@ -79,7 +79,7 @@ export default function TransfersPage() {
                 transfers.map((transfer) => (
                   <tr key={transfer.id} className="hover:bg-white/5">
                     <td className="px-4 py-4 whitespace-nowrap text-white/80">
-                      {format(new Date(transfer.date), "dd MMM yyyy", { locale: es })}
+                      {formatCalendarDate(transfer.date, "dd MMM yyyy", { locale: es })}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2 flex-wrap">

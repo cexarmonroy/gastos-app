@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toCalendarDate } from "@/lib/date-only";
 import { RecordModal } from "@/components/ui/RecordModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -104,7 +105,7 @@ export default function RecordsPage() {
   const loadRecords = () => {
     setIsLoading(true);
     fetchMovementsData().then((data) => {
-      const parsed = data.map((d) => ({ ...d, date: new Date(d.date) }));
+      const parsed = data.map((d) => ({ ...d, date: toCalendarDate(d.date) }));
       setRecords(parsed);
       setIsLoading(false);
     });
@@ -353,7 +354,7 @@ export default function RecordsPage() {
         const updatedMap = new Map(result.records.map((r) => [r.id, r]));
         return prev.map((r) => {
           const updated = updatedMap.get(r.id);
-          return updated ? { ...r, ...updated, date: new Date(updated.date) } : r;
+          return updated ? { ...r, ...updated, date: toCalendarDate(updated.date) } : r;
         });
       });
       setSelectedIds(new Set());

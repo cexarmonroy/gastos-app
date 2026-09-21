@@ -1,4 +1,4 @@
-import { format, parseISO } from "date-fns";
+import { formatCalendarDate } from "@/lib/date-only";
 import type { MovementRecord } from "./types";
 
 function escapeCsvField(value: string): string {
@@ -26,7 +26,7 @@ export function buildReportCsv(records: MovementRecord[]): string {
   ];
 
   const rows = records.map((record) => [
-    format(parseISO(record.date), "dd/MM/yyyy"),
+    formatCalendarDate(record.date, "dd/MM/yyyy"),
     escapeCsvField(record.description || ""),
     fundLabel(record.category),
     escapeCsvField(record.categoryName ?? ""),

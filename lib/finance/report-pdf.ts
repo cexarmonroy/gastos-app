@@ -1,7 +1,8 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate } from "@/lib/date-only";
 import type { CategoryBreakdownItem } from "./category-breakdown";
 import type { AssemblyReportSnapshot } from "./assembly-report";
 import type { FundBalanceSnapshot } from "./report-fund-balance";
@@ -192,7 +193,7 @@ function addDetailTables(doc: jsPDF, yPosition: number, totals: ReportTotals): n
     autoTable(doc, {
       head: [["Fecha", "Descripcion", "Categoria", "Actividad", "Tipo", "Monto"]],
       body: rows.map((record) => [
-        format(parseISO(record.date), "dd/MM/yyyy", { locale: es }),
+        formatCalendarDate(record.date, "dd/MM/yyyy", { locale: es }),
         toPdfSafeText(record.description, "Sin descripcion"),
         toPdfSafeText(record.categoryName, "-"),
         toPdfSafeText(record.eventName, "-"),

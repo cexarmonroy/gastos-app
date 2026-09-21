@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate } from "@/lib/date-only";
 import { ArrowLeft, Plus, Pencil, Target, TrendingUp, TrendingDown } from "lucide-react";
 import { getProjectDetail } from "@/app/actions/projects";
 import { ProjectModal } from "@/components/ui/ProjectModal";
@@ -183,7 +183,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 project.movements.map((m) => (
                   <tr key={m.id} className="hover:bg-white/5">
                     <td className="px-4 py-3 text-white/70">
-                      {format(new Date(m.date), "dd/MM/yyyy", { locale: es })}
+                      {formatCalendarDate(m.date, "dd/MM/yyyy", { locale: es })}
                     </td>
                     <td className="px-4 py-3">{m.description || "—"}</td>
                     <td className="px-4 py-3">

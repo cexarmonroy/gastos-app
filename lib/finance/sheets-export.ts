@@ -49,7 +49,7 @@ export async function exportRecordToSheets(data: SheetExportRecord) {
   const nextRow = lastRow + 1;
   const finalAmount = data.type === "Egreso" ? -Math.abs(data.amount) : Math.abs(data.amount);
   const dateObj = new Date(data.date);
-  const formattedDate = `${dateObj.getDate().toString().padStart(2, "0")}/${(dateObj.getMonth() + 1).toString().padStart(2, "0")}/${dateObj.getFullYear()}`;
+  const formattedDate = `${dateObj.getUTCDate().toString().padStart(2, "0")}/${(dateObj.getUTCMonth() + 1).toString().padStart(2, "0")}/${dateObj.getUTCFullYear()}`;
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,

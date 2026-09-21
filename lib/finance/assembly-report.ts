@@ -1,5 +1,6 @@
-import { endOfYear, parseISO, startOfYear } from "date-fns";
+import { endOfYear, startOfYear } from "date-fns";
 import { MovementType } from "@prisma/client";
+import { toCalendarDate } from "@/lib/date-only";
 import { buildCategoryBreakdown } from "./category-breakdown";
 import { computeCategorizationQuality } from "./categorization-quality";
 import { computeEventKpis } from "./event-stats";
@@ -48,11 +49,11 @@ export interface AssemblyReportSnapshot {
 }
 
 export function filterRecordsByYear(records: MovementRecord[], year: string): MovementRecord[] {
-  const yearStart = startOfYear(parseISO(`${year}-01-01`));
-  const yearEnd = endOfYear(parseISO(`${year}-01-01`));
+  const yearStart = startOfYear(toCalendarDate(`${year}-01-01`));
+  const yearEnd = endOfYear(toCalendarDate(`${year}-01-01`));
 
   return records.filter((record) => {
-    const date = parseISO(record.date);
+    const date = toCalendarDate(record.date);
     return date >= yearStart && date <= yearEnd;
   });
 }

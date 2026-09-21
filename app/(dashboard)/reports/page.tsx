@@ -67,8 +67,9 @@ import {
   generateStandardReportPdf,
 } from "@/lib/finance/report-pdf";
 import type { CategoryOption, EventOption, MovementRecord, ProjectOption } from "@/lib/finance/types";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate } from "@/lib/date-only";
 import {
   ResponsiveContainer,
   PieChart,
@@ -200,7 +201,7 @@ function buildExportFileName(
 ): string {
   const suffix = extension;
   if (filters.reportType === "mensual") {
-    return `Reporte_${format(parseISO(`${filters.selectedMonth}-01`), "MMMM_yyyy", { locale: es })}.${suffix}`;
+    return `Reporte_${formatCalendarDate(`${filters.selectedMonth}-01`, "MMMM_yyyy", { locale: es })}.${suffix}`;
   }
   if (filters.reportType === "anual") {
     return `Reporte_${filters.selectedYear}.${suffix}`;
@@ -209,12 +210,12 @@ function buildExportFileName(
     return `Rendicion_Asamblea_${filters.selectedYear}.${suffix}`;
   }
   if (filters.reportType === "actividad" && filters.selectedMonth && eventName) {
-    const monthSlug = format(parseISO(`${filters.selectedMonth}-01`), "MMMM_yyyy", { locale: es });
+    const monthSlug = formatCalendarDate(`${filters.selectedMonth}-01`, "MMMM_yyyy", { locale: es });
     const slug = eventName.replace(/[^\w\sáéíóúñ-]/gi, "").replace(/\s+/g, "_").slice(0, 40);
     return `Actividad_${slug}_${monthSlug}.${suffix}`;
   }
   if (filters.reportType === "personalizado") {
-    return `Reporte_${format(parseISO(filters.startDate), "dd-MM-yyyy")}_${format(parseISO(filters.endDate), "dd-MM-yyyy")}.${suffix}`;
+    return `Reporte_${formatCalendarDate(filters.startDate, "dd-MM-yyyy")}_${formatCalendarDate(filters.endDate, "dd-MM-yyyy")}.${suffix}`;
   }
   return `Reporte_Completo_${format(new Date(), "dd-MM-yyyy")}.${suffix}`;
 }

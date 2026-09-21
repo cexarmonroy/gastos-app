@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate } from "@/lib/date-only";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Download, ExternalLink } from "lucide-react";
@@ -24,7 +25,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
 
   const lastUpdateLabel = useMemo(() => {
     if (!summary.lastMovementDate) return "Sin movimientos";
-    return format(parseISO(summary.lastMovementDate), "dd MMM yyyy", { locale: es });
+    return formatCalendarDate(summary.lastMovementDate, "dd MMM yyyy", { locale: es });
   }, [summary.lastMovementDate]);
 
   const handleExportPdf = async () => {
@@ -67,7 +68,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
         startY: startRecent + 8,
         head: [["Fecha", "Descripción", "Fondo", "Tipo", "Monto"]],
         body: summary.recentMovements.map((movement) => [
-          format(parseISO(movement.date), "dd/MM/yyyy"),
+          formatCalendarDate(movement.date, "dd/MM/yyyy"),
           movement.description,
           movement.fundName,
           movement.type,
@@ -224,7 +225,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
                 {summary.recentMovements.map((movement, index) => (
                   <tr key={`${movement.date}-${index}`} className="border-t border-white/5">
                     <td className="p-3 whitespace-nowrap">
-                      {format(parseISO(movement.date), "dd/MM/yyyy")}
+                      {formatCalendarDate(movement.date, "dd/MM/yyyy")}
                     </td>
                     <td className="p-3">{movement.description || "Sin descripción"}</td>
                     <td className="p-3">{movement.fundName}</td>

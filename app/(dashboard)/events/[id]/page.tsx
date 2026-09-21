@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate } from "@/lib/date-only";
 import {
   ArrowLeft,
   Plus,
@@ -80,7 +80,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">{event.name}</h1>
           <p className="text-white/60 text-sm">
-            {format(new Date(event.date), "dd MMMM yyyy", { locale: es })}
+            {formatCalendarDate(event.date, "dd MMMM yyyy", { locale: es })}
             {event.description ? ` · ${event.description}` : ""}
           </p>
         </div>
@@ -159,7 +159,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 event.movements.map((m) => (
                   <tr key={m.id} className="hover:bg-white/5">
                     <td className="px-4 py-3 whitespace-nowrap text-white/70">
-                      {format(new Date(m.date), "dd/MM/yyyy")}
+                      {formatCalendarDate(m.date, "dd/MM/yyyy")}
                     </td>
                     <td className="px-4 py-3">{m.description || "—"}</td>
                     <td className="px-4 py-3 text-white/60">{m.categoryName ?? "—"}</td>

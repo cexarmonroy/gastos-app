@@ -45,8 +45,9 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate } from "@/lib/date-only";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { RecentActivityPanel } from "@/components/dashboard/RecentActivityPanel";
@@ -405,7 +406,7 @@ export default function DashboardPage() {
               </div>
               <p className="text-xl font-bold mb-1">{latestEvent.name}</p>
               <p className="text-white/50 text-sm mb-4">
-                {format(parseISO(latestEvent.date), "dd MMMM yyyy", { locale: es })}
+                {formatCalendarDate(latestEvent.date, "dd MMMM yyyy", { locale: es })}
               </p>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -631,7 +632,7 @@ export default function DashboardPage() {
                             ? `${subtitle} · `
                             : ""}
                           {record.date
-                            ? format(parseISO(record.date), "dd MMM yyyy", { locale: es })
+                            ? formatCalendarDate(record.date, "dd MMM yyyy", { locale: es })
                             : "Fecha inválida"}
                         </p>
                       </div>

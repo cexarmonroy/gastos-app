@@ -1,10 +1,5 @@
-import {
-  endOfMonth,
-  endOfYear,
-  parseISO,
-  startOfMonth,
-  startOfYear,
-} from "date-fns";
+import { endOfMonth, endOfYear, parseISO, startOfMonth, startOfYear } from "date-fns";
+import { toCalendarDate } from "@/lib/date-only";
 import { computeFundBalance } from "./map-movement";
 import {
   areReportFiltersValid,
@@ -55,18 +50,18 @@ export function getReportPeriodBounds(
     (filters.reportType === "mensual" || filters.reportType === "actividad") &&
     filters.selectedMonth
   ) {
-    const ref = parseISO(`${filters.selectedMonth}-01`);
+    const ref = toCalendarDate(`${filters.selectedMonth}-01`);
     return { start: startOfMonth(ref), end: endOfMonth(ref) };
   }
 
   if (filters.reportType === "anual" && filters.selectedYear) {
-    const ref = parseISO(`${filters.selectedYear}-01-01`);
+    const ref = toCalendarDate(`${filters.selectedYear}-01-01`);
     return { start: startOfYear(ref), end: endOfYear(ref) };
   }
 
   if (filters.reportType === "personalizado" && filters.startDate && filters.endDate) {
     return {
-      start: parseISO(filters.startDate),
+      start: toCalendarDate(filters.startDate),
       end: parseISO(`${filters.endDate}T23:59:59`),
     };
   }
@@ -75,11 +70,11 @@ export function getReportPeriodBounds(
 }
 
 function filterThroughDate(records: MovementRecord[], through: Date): MovementRecord[] {
-  return records.filter((record) => parseISO(record.date) <= through);
+  return records.filter((record) => toCalendarDate(record.date) <= through);
 }
 
 function filterBeforeDate(records: MovementRecord[], before: Date): MovementRecord[] {
-  return records.filter((record) => parseISO(record.date) < before);
+  return records.filter((record) => toCalendarDate(record.date) < before);
 }
 
 function computeLine(

@@ -1,5 +1,6 @@
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toCalendarDate } from "@/lib/date-only";
 import type { DashboardPeriod } from "./period-filter";
 import type { MovementRecord } from "./types";
 
@@ -34,7 +35,7 @@ export function buildFlowChartData(
 
   for (const record of records) {
     try {
-      const date = parseISO(record.date);
+      const date = toCalendarDate(record.date);
       const { sortKey, label } = getBucket(date, period);
       const existing = buckets.get(sortKey);
       const isIngreso = record.type === "Ingreso";
@@ -64,7 +65,7 @@ export function buildFlowChartData(
 
 export function buildBalanceChartData(records: MovementRecord[]): BalanceChartPoint[] {
   const sorted = [...records].sort(
-    (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()
+    (a, b) => toCalendarDate(a.date).getTime() - toCalendarDate(b.date).getTime()
   );
 
   const monthTotals = new Map<string, { label: string; delta: number }>();
@@ -72,7 +73,7 @@ export function buildBalanceChartData(records: MovementRecord[]): BalanceChartPo
 
   for (const record of sorted) {
     try {
-      const date = parseISO(record.date);
+      const date = toCalendarDate(record.date);
       const sortKey = format(date, "yyyy-MM");
       const label = format(date, "MMM yy", { locale: es });
       runningBalance += record.amount;

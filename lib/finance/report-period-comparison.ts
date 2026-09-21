@@ -1,5 +1,6 @@
-import { format, parseISO, subMonths } from "date-fns";
+import { format, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate, toCalendarDate } from "@/lib/date-only";
 import {
   computeReportTotals,
   filterRecordsForReport,
@@ -35,7 +36,7 @@ export function buildPreviousPeriodFilters(filters: ReportFilters): ReportFilter
 
   if (filters.reportType === "mensual" || filters.reportType === "actividad") {
     if (!filters.selectedMonth) return null;
-    const previousMonth = subMonths(parseISO(`${filters.selectedMonth}-01`), 1);
+    const previousMonth = subMonths(toCalendarDate(`${filters.selectedMonth}-01`), 1);
     return { ...filters, selectedMonth: format(previousMonth, "yyyy-MM") };
   }
 
@@ -55,7 +56,7 @@ export function getPreviousPeriodShortLabel(filters: ReportFilters): string | nu
 
   if (previousFilters.reportType === "mensual" || previousFilters.reportType === "actividad") {
     if (!previousFilters.selectedMonth) return null;
-    return format(parseISO(`${previousFilters.selectedMonth}-01`), "MMMM", { locale: es });
+    return formatCalendarDate(`${previousFilters.selectedMonth}-01`, "MMMM", { locale: es });
   }
 
   if (previousFilters.reportType === "anual" && previousFilters.selectedYear) {

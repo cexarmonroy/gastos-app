@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X, Calendar as CalendarIcon, AlignLeft, Target } from "lucide-react";
 import { createEvent, updateEvent } from "@/app/actions/events";
+import { toDateInputValue, todayDateInputValue } from "@/lib/date-only";
 import type { EventSummary } from "@/lib/finance/types";
 
 interface EventModalProps {
@@ -17,7 +18,7 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    date: new Date().toISOString().split("T")[0],
+    date: todayDateInputValue(),
     goal: "",
     description: "",
   });
@@ -28,14 +29,14 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
     if (event) {
       setFormData({
         name: event.name,
-        date: new Date(event.date).toISOString().split("T")[0],
+        date: toDateInputValue(event.date),
         goal: event.goal ? event.goal.toString() : "",
         description: event.description ?? "",
       });
     } else {
       setFormData({
         name: "",
-        date: new Date().toISOString().split("T")[0],
+        date: todayDateInputValue(),
         goal: "",
         description: "",
       });

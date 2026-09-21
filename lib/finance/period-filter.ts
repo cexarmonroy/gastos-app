@@ -1,19 +1,9 @@
-import {
-  endOfMonth,
-  endOfYear,
-  format,
-  parseISO,
-  startOfMonth,
-  startOfYear,
-} from "date-fns";
+import { endOfMonth, endOfYear, format, startOfMonth, startOfYear } from "date-fns";
 import { es } from "date-fns/locale";
+import { toCalendarDate } from "@/lib/date-only";
 import type { MovementRecord } from "./types";
 
 export type DashboardPeriod = "month" | "year" | "all";
-
-function parseRecordDate(date: string): Date {
-  return parseISO(date);
-}
 
 export function filterRecordsByPeriod(
   records: MovementRecord[],
@@ -27,7 +17,7 @@ export function filterRecordsByPeriod(
   const end = period === "month" ? endOfMonth(referenceDate) : endOfYear(referenceDate);
 
   return records.filter((record) => {
-    const date = parseRecordDate(record.date);
+    const date = toCalendarDate(record.date);
     return date >= start && date <= end;
   });
 }

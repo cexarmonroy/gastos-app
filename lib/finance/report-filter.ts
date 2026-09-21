@@ -1,14 +1,8 @@
-import {
-  endOfMonth,
-  endOfYear,
-  format,
-  parseISO,
-  startOfMonth,
-  startOfYear,
-} from "date-fns";
+import { endOfMonth, endOfYear, startOfMonth, startOfYear } from "date-fns";
 import { es } from "date-fns/locale";
 import { countTransferOperations, isTransferMovement } from "./categorization-quality";
 import { sumExpense, sumIncome } from "./period-filter";
+import { formatCalendarDate, toCalendarDate, toDateInputValue } from "@/lib/date-only";
 import type { FundTab, MovementRecord } from "./types";
 
 export type ReportType =
@@ -69,7 +63,7 @@ export function getReportFilterError(filters: ReportFilters): string | null {
 
 export function getReportPeriodLabel(filters: ReportFilters): string {
   if (filters.reportType === "mensual" && filters.selectedMonth) {
-    return format(parseISO(`${filters.selectedMonth}-01`), "MMMM yyyy", { locale: es });
+    return formatCalendarDate(`${filters.selectedMonth}-01`, "MMMM yyyy", { locale: es });
   }
   if (filters.reportType === "anual" && filters.selectedYear) {
     return `Año ${filters.selectedYear}`;
@@ -78,10 +72,10 @@ export function getReportPeriodLabel(filters: ReportFilters): string {
     return `Asamblea ${filters.selectedYear}`;
   }
   if (filters.reportType === "actividad" && filters.selectedMonth) {
-    return format(parseISO(`${filters.selectedMonth}-01`), "MMMM yyyy", { locale: es });
+    return formatCalendarDate(`${filters.selectedMonth}-01`, "MMMM yyyy", { locale: es });
   }
   if (filters.reportType === "personalizado" && areReportFiltersValid(filters)) {
-    return `${format(parseISO(filters.startDate), "dd/MM/yyyy", { locale: es })} – ${format(parseISO(filters.endDate), "dd/MM/yyyy", { locale: es })}`;
+    return `${formatCalendarDate(filters.startDate, "dd/MM/yyyy", { locale: es })} – ${formatCalendarDate(filters.endDate, "dd/MM/yyyy", { locale: es })}`;
   }
   return "Histórico completo";
 }
@@ -91,10 +85,10 @@ function applyDateFilter(records: MovementRecord[], filters: ReportFilters): Mov
     (filters.reportType === "mensual" || filters.reportType === "actividad") &&
     filters.selectedMonth
   ) {
-    const monthStart = startOfMonth(parseISO(`${filters.selectedMonth}-01`));
-    const monthEnd = endOfMonth(parseISO(`${filters.selectedMonth}-01`));
+    const monthStart = startOfMonth(toCalendarDate(`${filters.selectedMonth}-01`));
+    const monthEnd = endOfMonth(toCalendarDate(`${filters.selectedMonth}-01`));
     return records.filter((r) => {
-      const recordDate = parseISO(r.date);
+      const recordDate = toCalendarDate(r.date);
       return recordDate >= monthStart && recordDate <= monthEnd;
     });
   }
@@ -103,17 +97,17 @@ function applyDateFilter(records: MovementRecord[], filters: ReportFilters): Mov
     (filters.reportType === "anual" || filters.reportType === "asamblea") &&
     filters.selectedYear
   ) {
-    const yearStart = startOfYear(parseISO(`${filters.selectedYear}-01-01`));
-    const yearEnd = endOfYear(parseISO(`${filters.selectedYear}-01-01`));
+    const yearStart = startOfYear(toCalendarDate(`${filters.selectedYear}-01-01`));
+    const yearEnd = endOfYear(toCalendarDate(`${filters.selectedYear}-01-01`));
     return records.filter((r) => {
-      const recordDate = parseISO(r.date);
+      const recordDate = toCalendarDate(r.date);
       return recordDate >= yearStart && recordDate <= yearEnd;
     });
   }
 
   if (filters.reportType === "personalizado") {
     return records.filter((r) => {
-      const recordDate = format(parseISO(r.date), "yyyy-MM-dd");
+      const recordDate = toDateInputValue(r.date);
       return recordDate >= filters.startDate && recordDate <= filters.endDate;
     });
   }

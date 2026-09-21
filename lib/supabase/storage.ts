@@ -1,11 +1,28 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? "movement-attachments";
+const DEFAULT_BUCKET = "movement-attachments";
 
 let adminClient: SupabaseClient | null = null;
 
+function normalizeSupabaseUrl(url: string): string {
+  return url.trim().replace(/\/+$/, "").replace(/\/rest\/v1$/i, "");
+}
+
+function getSupabaseUrl(): string {
+  const raw = process.env.SUPABASE_URL?.trim();
+  if (!raw) {
+    throw new Error("SUPABASE_URL no está definida.");
+  }
+  return normalizeSupabaseUrl(raw);
+}
+
+function getBucketName(): string {
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET?.trim();
+  return bucket || DEFAULT_BUCKET;
+}
+
 export function isStorageConfigured(): boolean {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
 }
 
 export function getStorageAdmin(): SupabaseClient {
@@ -17,7 +34,7 @@ export function getStorageAdmin(): SupabaseClient {
 
   if (!adminClient) {
     adminClient = createClient(
-      process.env.SUPABASE_URL!,
+      getSupabaseUrl(),
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
@@ -27,12 +44,12 @@ export function getStorageAdmin(): SupabaseClient {
 }
 
 export function getStorageBucket(): string {
-  return BUCKET;
+  return getBucketName();
 }
 
 export async function createSignedDownloadUrl(storagePath: string, expiresIn = 3600): Promise<string> {
   const supabase = getStorageAdmin();
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, expiresIn);
+  const { data, error } = await supabase.storage.from(getBucketName()).createSignedUrl(storagePath, expiresIn);
 
   if (error || !data?.signedUrl) {
     throw new Error(error?.message ?? "No se pudo generar el enlace de descarga.");

@@ -7,6 +7,7 @@ import { getEventOptions } from "@/app/actions/events";
 import { getProjectOptions } from "@/app/actions/projects";
 import { createMovement, getCategoryOptions, updateMovement } from "@/app/actions/movements";
 import { getDefaultCategoryCodeForMovementLabel } from "@/lib/finance/event-category";
+import { toDateInputValue, todayDateInputValue } from "@/lib/date-only";
 import { AttachmentPanel } from "@/components/ui/AttachmentPanel";
 import type { CategoryOption, EventOption, FundTab, MovementRecord, ProjectOption } from "@/lib/finance/types";
 
@@ -47,7 +48,7 @@ export function RecordModal({
     categoryId: "",
     eventId: "",
     projectId: "",
-    date: new Date().toISOString().split("T")[0],
+    date: todayDateInputValue(),
   });
 
   useEffect(() => {
@@ -62,7 +63,7 @@ export function RecordModal({
         categoryId: record.categoryId ?? "",
         eventId: record.eventId ?? "",
         projectId: record.projectId ?? "",
-        date: new Date(record.date).toISOString().split("T")[0],
+        date: toDateInputValue(record.date),
       });
     } else {
       setFormData({
@@ -73,7 +74,7 @@ export function RecordModal({
         categoryId: "",
         eventId: defaultEventId ?? "",
         projectId: defaultProjectId ?? "",
-        date: new Date().toISOString().split("T")[0],
+        date: todayDateInputValue(),
       });
     }
   }, [isOpen, record, defaultEventId, defaultProjectId, defaultFund, defaultType]);

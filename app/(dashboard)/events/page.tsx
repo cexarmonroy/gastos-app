@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCalendarDate } from "@/lib/date-only";
 import { Plus, PartyPopper, TrendingUp, TrendingDown, Target } from "lucide-react";
 import { fetchEvents } from "@/app/actions/events";
 import { EventModal } from "@/components/ui/EventModal";
@@ -79,7 +79,7 @@ export default function EventsPage() {
                     {event.name}
                   </h3>
                   <p className="text-white/50 text-xs">
-                    {format(new Date(event.date), "dd MMMM yyyy", { locale: es })}
+                    {formatCalendarDate(event.date, "dd MMMM yyyy", { locale: es })}
                   </p>
                 </div>
                 {event.goalProgress != null && (
