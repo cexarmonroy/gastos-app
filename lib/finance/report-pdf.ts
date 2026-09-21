@@ -352,7 +352,7 @@ export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot
   doc.text("Rendicion de Cuentas CGPA", 40, yPosition);
   yPosition += 7;
   doc.setFontSize(12);
-  doc.text(`Asamblea - Ano ${snapshot.year}`, 40, yPosition);
+  doc.text(`Asamblea - Periodo ${snapshot.year}`, 40, yPosition);
   yPosition += 10;
 
   doc.setFontSize(10);
@@ -375,7 +375,7 @@ export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot
 
   if (snapshot.events.length > 0) {
     doc.setFont("helvetica", "bold");
-    doc.text("Actividades del ano", 14, yPosition);
+    doc.text("Actividades del periodo", 14, yPosition);
     autoTable(doc, {
       head: [["Actividad", "Meta", "Ingresos", "Gastos", "Ganancia", "Avance"]],
       body: snapshot.events.map((event) => [
@@ -396,9 +396,9 @@ export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot
 
   if (snapshot.projects.length > 0) {
     doc.setFont("helvetica", "bold");
-    doc.text("Proyectos del ano", 14, yPosition);
+    doc.text("Proyectos del periodo", 14, yPosition);
     autoTable(doc, {
-      head: [["Proyecto", "Tipo", "Meta/Presup.", "Monto ano", "Indicador"]],
+      head: [["Proyecto", "Tipo", "Meta/Presup.", "Monto periodo", "Indicador"]],
       body: snapshot.projects.map((project) => [
         toPdfSafeText(project.name),
         project.fundingMode === "EXECUTION" ? "Ejecucion" : "Recaudacion",
@@ -419,8 +419,8 @@ export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot
     yPosition = getTableEndY(doc) + 10;
   }
 
-  yPosition = addCategoryTable(doc, yPosition, "Top gastos del ano", snapshot.topExpenses);
-  addCategoryTable(doc, yPosition, "Top ingresos del ano", snapshot.topIncomes);
+  yPosition = addCategoryTable(doc, yPosition, "Top gastos del periodo", snapshot.topExpenses);
+  addCategoryTable(doc, yPosition, "Top ingresos del periodo", snapshot.topIncomes);
 
   return doc;
 }

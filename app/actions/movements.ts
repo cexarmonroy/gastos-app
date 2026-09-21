@@ -304,17 +304,15 @@ export async function createMovement(input: CreateMovementInput) {
     });
 
     if (process.env.WRITE_TO_SHEETS !== "false") {
-      try {
-        await exportRecordToSheets({
-          date: data.date,
-          amount: Math.abs(data.amount),
-          type: data.type,
-          description: data.description,
-          category: data.fund,
-        });
-      } catch (exportError) {
+      exportRecordToSheets({
+        date: data.date,
+        amount: Math.abs(data.amount),
+        type: data.type,
+        description: data.description,
+        category: data.fund,
+      }).catch((exportError) => {
         console.error("Exportación a Sheets falló (movimiento guardado en BD):", exportError);
-      }
+      });
     }
 
     revalidatePath("/dashboard");
