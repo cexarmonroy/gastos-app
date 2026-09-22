@@ -5,20 +5,30 @@ import type { MovementRecord } from "./types";
 
 export type DashboardPeriod = "month" | "year" | "all";
 
-export function filterRecordsByPeriod(
-  records: MovementRecord[],
+export function getPeriodBounds(
   period: DashboardPeriod,
   referenceDate = new Date()
-): MovementRecord[] {
-  if (period === "all") return records;
+): { start: Date; end: Date } | null {
+  if (period === "all") return null;
 
   const start =
     period === "month" ? startOfMonth(referenceDate) : startOfYear(referenceDate);
   const end = period === "month" ? endOfMonth(referenceDate) : endOfYear(referenceDate);
 
+  return { start, end };
+}
+
+export function filterRecordsByPeriod(
+  records: MovementRecord[],
+  period: DashboardPeriod,
+  referenceDate = new Date()
+): MovementRecord[] {
+  const bounds = getPeriodBounds(period, referenceDate);
+  if (!bounds) return records;
+
   return records.filter((record) => {
     const date = toCalendarDate(record.date);
-    return date >= start && date <= end;
+    return date >= bounds.start && date <= bounds.end;
   });
 }
 

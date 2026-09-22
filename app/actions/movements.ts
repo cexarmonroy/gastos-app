@@ -161,7 +161,40 @@ async function getOrganizationId() {
   return organization.id;
 }
 
-export async function fetchMovementsData(): Promise<MovementRecord[]> {
+export async function fetchMovementsData(params?: {
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<MovementRecord[]> {
+  await assertAuthenticated();
+  const organizationId = await getOrganizationId();
+
+  const movements = await prisma.movement.findMany({
+    where: {
+      organizationId,
+      deletedAt: null,
+      ...(params?.dateFrom || params?.dateTo
+        ? {
+            date: {
+              ...(params.dateFrom ? { gte: new Date(params.dateFrom) } : {}),
+              ...(params.dateTo ? { lte: new Date(params.dateTo) } : {}),
+            },
+          }
+        : {}),
+    },
+    include: {
+      fund: true,
+      category: true,
+      event: true,
+      project: true,
+    },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+  });
+
+  return movements.map(toMovementRecord);
+}
+
+/** Los N movimientos más recientes, sin importar el período mostrado en el dashboard. */
+export async function fetchRecentMovements(limit = 6): Promise<MovementRecord[]> {
   await assertAuthenticated();
   const organizationId = await getOrganizationId();
 
@@ -177,9 +210,43 @@ export async function fetchMovementsData(): Promise<MovementRecord[]> {
       project: true,
     },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    take: limit,
   });
 
   return movements.map(toMovementRecord);
+}
+
+/**
+ * Saldo actual por fondo, calculado con SUM() en la base de datos en vez de
+ * traer todos los movimientos al cliente para sumarlos ahí.
+ */
+export async function getFundBalances(): Promise<Record<FundTab, number>> {
+  await assertAuthenticated();
+  const organizationId = await getOrganizationId();
+
+  const [funds, sums] = await Promise.all([
+    prisma.fund.findMany({ where: { organizationId, active: true } }),
+    prisma.movement.groupBy({
+      by: ["fundId", "movementType"],
+      where: { organizationId, deletedAt: null },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const balances: Record<FundTab, number> = { caja_chica: 0, fondo_ahorro: 0 };
+
+  for (const fund of funds) {
+    const tab = (FUND_CODE_TO_TAB[fund.code] ?? "caja_chica") as FundTab;
+    const income = sums
+      .find((s) => s.fundId === fund.id && s.movementType === MovementType.INCOME)
+      ?._sum.amount?.toNumber();
+    const expense = sums
+      .find((s) => s.fundId === fund.id && s.movementType === MovementType.EXPENSE)
+      ?._sum.amount?.toNumber();
+    balances[tab] = (income ?? 0) - (expense ?? 0);
+  }
+
+  return balances;
 }
 
 export async function getFundOptions(): Promise<FundOption[]> {

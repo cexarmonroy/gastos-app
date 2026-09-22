@@ -13,7 +13,7 @@ import {
   HardHat,
   PartyPopper,
 } from "lucide-react";
-import { fetchMovementsData } from "@/app/actions/movements";
+import { fetchMovementsData, fetchRecentMovements, getFundBalances } from "@/app/actions/movements";
 import { fetchProjects } from "@/app/actions/projects";
 import { fetchEvents } from "@/app/actions/events";
 import { buildCategoryBreakdown } from "@/lib/finance/category-breakdown";
@@ -21,13 +21,12 @@ import {
   buildBalanceChartData,
   buildFlowChartData,
 } from "@/lib/finance/chart-data";
-import { computeFundBalance } from "@/lib/finance/map-movement";
 import {
   getMovementDisplayLabel,
   getMovementSubtitle,
 } from "@/lib/finance/movement-label";
 import {
-  filterRecordsByPeriod,
+  getPeriodBounds,
   getPeriodLabel,
   sumExpense,
   sumIncome,
@@ -56,7 +55,9 @@ type ChartMode = "flow" | "balance";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const [records, setRecords] = useState<MovementRecord[]>([]);
+  const [periodRecords, setPeriodRecords] = useState<MovementRecord[]>([]);
+  const [recentMovements, setRecentMovements] = useState<MovementRecord[]>([]);
+  const [fundBalances, setFundBalances] = useState({ caja_chica: 0, fondo_ahorro: 0 });
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [period, setPeriod] = useState<DashboardPeriod>("month");
@@ -66,21 +67,39 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // El historial completo solo se necesita para "Evolución del Saldo", así que
+  // se carga bajo demanda la primera vez que se selecciona esa vista.
+  const [balanceHistory, setBalanceHistory] = useState<MovementRecord[] | null>(null);
+  const [isLoadingBalanceHistory, setIsLoadingBalanceHistory] = useState(false);
+
   const loadData = async (isRefresh = false) => {
     try {
       if (isRefresh) setIsRefreshing(true);
       setError(null);
 
-      const [movements, projectList, eventList] = await Promise.all([
-        fetchMovementsData(),
+      const bounds = getPeriodBounds(period);
+      const [movements, recent, balances, projectList, eventList] = await Promise.all([
+        fetchMovementsData(
+          bounds ? { dateFrom: bounds.start.toISOString(), dateTo: bounds.end.toISOString() } : undefined
+        ),
+        fetchRecentMovements(6),
+        getFundBalances(),
         fetchProjects(),
         fetchEvents(),
       ]);
 
-      setRecords(movements);
+      setPeriodRecords(movements);
+      setRecentMovements(recent);
+      setFundBalances(balances);
       setProjects(projectList);
       setEvents(eventList);
       setLastUpdate(new Date());
+
+      // Solo se refresca el historial completo en un refresh explícito (no en
+      // cada cambio de período, ya que "Evolución del Saldo" no depende de él).
+      if (isRefresh && balanceHistory !== null) {
+        fetchMovementsData().then(setBalanceHistory);
+      }
     } catch (err) {
       setError("Error al cargar los datos. Por favor, intenta de nuevo.");
       console.error("Error loading data:", err);
@@ -92,16 +111,21 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period]);
 
-  const periodRecords = useMemo(
-    () => filterRecordsByPeriod(records, period),
-    [records, period]
-  );
+  useEffect(() => {
+    if (chartMode !== "balance" || balanceHistory !== null || isLoadingBalanceHistory) return;
+    setIsLoadingBalanceHistory(true);
+    fetchMovementsData()
+      .then(setBalanceHistory)
+      .finally(() => setIsLoadingBalanceHistory(false));
+  }, [chartMode, balanceHistory, isLoadingBalanceHistory]);
+
   const periodLabel = getPeriodLabel(period);
 
-  const totalCajaChica = computeFundBalance(records, "caja_chica");
-  const totalFondoAhorro = computeFundBalance(records, "fondo_ahorro");
+  const totalCajaChica = fundBalances.caja_chica;
+  const totalFondoAhorro = fundBalances.fondo_ahorro;
   const saldoTotal = totalCajaChica + totalFondoAhorro;
 
   const periodIngresos = sumIncome(periodRecords);
@@ -123,7 +147,10 @@ export default function DashboardPage() {
     () => buildFlowChartData(periodRecords, period),
     [periodRecords, period]
   );
-  const balanceChartData = useMemo(() => buildBalanceChartData(records), [records]);
+  const balanceChartData = useMemo(
+    () => buildBalanceChartData(balanceHistory ?? []),
+    [balanceHistory]
+  );
 
   const priorityProject = useMemo(() => {
     const fundraising = projects.filter((p) => p.fundingMode === "FUNDRAISING");
@@ -471,7 +498,7 @@ export default function DashboardPage() {
             </select>
           </div>
           <div className="flex-1 w-full relative min-h-[250px] md:min-h-[300px]">
-            {isLoading ? (
+            {isLoading || (chartMode === "balance" && isLoadingBalanceHistory) ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <p className="text-white/50 animate-pulse">Cargando gráfico...</p>
               </div>
@@ -600,8 +627,8 @@ export default function DashboardPage() {
           <div className="flex-1 flex flex-col gap-3 md:gap-4 mb-4 overflow-y-auto pr-2 custom-scrollbar">
             {isLoading ? (
               <p className="text-white/40 text-sm text-center my-auto animate-pulse">Cargando...</p>
-            ) : records.length > 0 ? (
-              records.slice(0, 6).map((record) => {
+            ) : recentMovements.length > 0 ? (
+              recentMovements.map((record) => {
                 const label = getMovementDisplayLabel(record);
                 const subtitle = getMovementSubtitle(record);
                 return (
