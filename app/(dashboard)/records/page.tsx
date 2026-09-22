@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Plus,
@@ -60,7 +61,16 @@ const TYPE_FILTER_CHIPS: { id: TypeFilter; label: string }[] = [
 ];
 
 export default function RecordsPage() {
+  return (
+    <Suspense fallback={null}>
+      <RecordsPageContent />
+    </Suspense>
+  );
+}
+
+function RecordsPageContent() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MovementRecord | null>(null);
@@ -93,6 +103,23 @@ export default function RecordsPage() {
       setAllCategories(cats);
       setEvents(evts);
     });
+  }, []);
+
+  // Filtros iniciales al llegar desde un enlace del dashboard (ej. "Top Ingresos por Categoría").
+  useEffect(() => {
+    const fund = searchParams.get("fund");
+    const category = searchParams.get("category");
+    const type = searchParams.get("type");
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+
+    if (fund === "caja_chica" || fund === "fondo_ahorro") setActiveTab(fund);
+    if (category) setCategoryFilter(category);
+    if (type === "ingreso" || type === "egreso") setTypeFilter(type);
+    if (from) setStartDate(from);
+    if (to) setEndDate(to);
+    if (from || to) setShowDateFilter(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

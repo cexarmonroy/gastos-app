@@ -44,7 +44,7 @@ import {
 } from "@/lib/finance/period-filter";
 import { computeMetric } from "@/lib/finance/period-comparison";
 import { computeActivityRoi } from "@/lib/finance/report-period-comparison";
-import type { EventSummary, MovementRecord, ProjectSummary } from "@/lib/finance/types";
+import type { EventSummary, FundTab, MovementRecord, ProjectSummary } from "@/lib/finance/types";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -74,6 +74,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [period, setPeriod] = useState<DashboardPeriod>("month");
+  const [categoryFundFilter, setCategoryFundFilter] = useState<FundTab | "all">("all");
   const [chartMode, setChartMode] = useState<ChartMode>("flow");
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -150,15 +151,23 @@ export default function DashboardPage() {
   const periodEgresos = sumExpense(periodRecords);
   const periodResultado = periodIngresos - periodEgresos;
 
+  const categoryFundRecords = useMemo(
+    () =>
+      categoryFundFilter === "all"
+        ? periodRecords
+        : periodRecords.filter((r) => r.category === categoryFundFilter),
+    [periodRecords, categoryFundFilter]
+  );
+
   const expenseBreakdown = useMemo(
     () =>
-      buildCategoryBreakdown(periodRecords.filter((r) => r.type === "Egreso")).slice(0, 5),
-    [periodRecords]
+      buildCategoryBreakdown(categoryFundRecords.filter((r) => r.type === "Egreso")).slice(0, 5),
+    [categoryFundRecords]
   );
   const incomeBreakdown = useMemo(
     () =>
-      buildCategoryBreakdown(periodRecords.filter((r) => r.type === "Ingreso")).slice(0, 5),
-    [periodRecords]
+      buildCategoryBreakdown(categoryFundRecords.filter((r) => r.type === "Ingreso")).slice(0, 5),
+    [categoryFundRecords]
   );
 
   const flowChartData = useMemo(
@@ -206,6 +215,19 @@ export default function DashboardPage() {
 
   const formatM = (val: number) =>
     "$" + val.toLocaleString("es-CL", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  const buildCategoryRecordsHref = (categoryId: string | null, type: "Ingreso" | "Egreso") => {
+    const params = new URLSearchParams();
+    params.set("type", type === "Ingreso" ? "ingreso" : "egreso");
+    if (categoryId) params.set("category", categoryId);
+    if (categoryFundFilter !== "all") params.set("fund", categoryFundFilter);
+    const bounds = getPeriodBounds(period);
+    if (bounds) {
+      params.set("from", format(bounds.start, "yyyy-MM-dd"));
+      params.set("to", format(bounds.end, "yyyy-MM-dd"));
+    }
+    return `/records?${params.toString()}`;
+  };
 
   const showWeeklyBreakdown = !isLoading && period === "month" && weeklyFlowData.length > 0;
   const showLatestEvent = !isLoading && !!latestEvent;
@@ -495,50 +517,82 @@ export default function DashboardPage() {
 
       {/* Top categorías del período */}
       {!isLoading && periodRecords.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+        <>
+          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <p className="text-muted text-xs font-medium uppercase tracking-wider">
+              Top categorías del período
+            </p>
+            <select
+              value={categoryFundFilter}
+              onChange={(e) => setCategoryFundFilter(e.target.value as FundTab | "all")}
+              className="select-premium py-1.5 text-xs w-auto"
+            >
+              <option value="all">Ambos fondos</option>
+              <option value="caja_chica">Solo Caja Chica</option>
+              <option value="fondo_ahorro">Solo Fondo de Ahorro</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="glass-panel p-4 md:p-6">
             <h3 className="text-lg font-semibold mb-1">Top Ingresos por Categoría</h3>
-            <p className="text-muted text-xs mb-4">{periodLabel}</p>
-            <div className="space-y-3">
+            <p className="text-muted text-xs mb-4">
+              {periodLabel} · haz clic en una categoría para ver el detalle
+            </p>
+            <div className="space-y-1">
               {incomeBreakdown.length === 0 ? (
                 <p className="text-muted text-sm">Sin datos en este período</p>
               ) : (
                 incomeBreakdown.map((item) => (
-                  <div
+                  <Link
                     key={item.categoryId ?? item.categoryName}
-                    className="flex justify-between items-center text-sm"
+                    href={buildCategoryRecordsHref(item.categoryId, "Ingreso")}
+                    className="flex justify-between items-center text-sm px-2 py-1.5 -mx-2 rounded-lg hover:bg-surface-elevated transition-colors group"
                   >
-                    <span className="text-foreground/80">{item.categoryName}</span>
-                    <span className="text-success font-semibold font-mono">
+                    <span className="text-foreground/80 group-hover:text-foreground">
+                      {item.categoryName}
+                      <span className="text-muted text-xs ml-1.5">
+                        · {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
+                      </span>
+                    </span>
+                    <span className="text-success font-semibold font-mono flex-shrink-0 ml-2">
                       ${item.total.toLocaleString("es-CL")}
                     </span>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
           </div>
           <div className="glass-panel p-4 md:p-6">
             <h3 className="text-lg font-semibold mb-1">Top Gastos por Categoría</h3>
-            <p className="text-muted text-xs mb-4">{periodLabel}</p>
-            <div className="space-y-3">
+            <p className="text-muted text-xs mb-4">
+              {periodLabel} · haz clic en una categoría para ver el detalle
+            </p>
+            <div className="space-y-1">
               {expenseBreakdown.length === 0 ? (
                 <p className="text-muted text-sm">Sin datos en este período</p>
               ) : (
                 expenseBreakdown.map((item) => (
-                  <div
+                  <Link
                     key={item.categoryId ?? item.categoryName}
-                    className="flex justify-between items-center text-sm"
+                    href={buildCategoryRecordsHref(item.categoryId, "Egreso")}
+                    className="flex justify-between items-center text-sm px-2 py-1.5 -mx-2 rounded-lg hover:bg-surface-elevated transition-colors group"
                   >
-                    <span className="text-foreground/80">{item.categoryName}</span>
-                    <span className="text-danger font-semibold font-mono">
+                    <span className="text-foreground/80 group-hover:text-foreground">
+                      {item.categoryName}
+                      <span className="text-muted text-xs ml-1.5">
+                        · {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
+                      </span>
+                    </span>
+                    <span className="text-danger font-semibold font-mono flex-shrink-0 ml-2">
                       ${item.total.toLocaleString("es-CL")}
                     </span>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {/* Proyecto Prioritario */}
