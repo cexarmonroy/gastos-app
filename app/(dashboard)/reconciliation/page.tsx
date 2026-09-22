@@ -77,7 +77,7 @@ export default function ReconciliationPage() {
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Conciliación</h1>
-          <p className="text-white/60 text-sm md:text-base">
+          <p className="text-muted text-sm md:text-base">
             Compara saldos entre PostgreSQL y Google Sheets.
           </p>
         </div>
@@ -102,7 +102,7 @@ export default function ReconciliationPage() {
       </div>
 
       {isLoading ? (
-        <div className="glass-panel p-8 text-center text-white/50">Cargando conciliación...</div>
+        <div className="glass-panel p-8 text-center text-muted">Cargando conciliación...</div>
       ) : (
         <>
           <div
@@ -120,7 +120,7 @@ export default function ReconciliationPage() {
                 <p className="font-semibold text-lg">
                   {allMatch ? "Saldos conciliados" : "Hay diferencias por revisar"}
                 </p>
-                <p className="text-white/60 text-sm">
+                <p className="text-muted text-sm">
                   {allMatch
                     ? "PostgreSQL y Google Sheets coinciden en todos los fondos."
                     : "Revisa las diferencias abajo o importa movimientos faltantes desde Sheets."}
@@ -146,15 +146,15 @@ export default function ReconciliationPage() {
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-white/60">Saldo Sheets</span>
+                    <span className="text-muted">Saldo Sheets</span>
                     <span className="font-mono">{formatMoney(item.sheetBalance)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-white/60">Saldo BD</span>
+                    <span className="text-muted">Saldo BD</span>
                     <span className="font-mono">{formatMoney(item.dbBalance)}</span>
                   </div>
-                  <div className="flex justify-between border-t border-white/10 pt-2">
-                    <span className="text-white/60">Delta</span>
+                  <div className="flex justify-between border-t border-border pt-2">
+                    <span className="text-muted">Delta</span>
                     <span
                       className={`font-mono font-bold ${
                         item.delta === 0 ? "text-success" : "text-danger"
@@ -163,20 +163,20 @@ export default function ReconciliationPage() {
                       {formatMoney(item.delta)}
                     </span>
                   </div>
-                  <p className="text-white/40 text-xs pt-1">{item.rowCount} filas en Sheets</p>
+                  <p className="text-muted text-xs pt-1">{item.rowCount} filas en Sheets</p>
                 </div>
               </div>
             ))}
           </div>
 
           <div className="glass-panel overflow-hidden">
-            <div className="p-4 md:p-5 border-b border-white/10 flex items-center gap-2">
+            <div className="p-4 md:p-5 border-b border-border flex items-center gap-2">
               <History className="w-5 h-5 text-primary" />
               <h3 className="font-semibold">Historial de conciliaciones</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="text-xs uppercase bg-[#0f1115] text-white/60">
+                <thead className="text-xs uppercase table-head text-muted">
                   <tr>
                     <th className="px-4 py-3 text-left">Fecha</th>
                     <th className="px-4 py-3 text-left">Fondo</th>
@@ -186,17 +186,17 @@ export default function ReconciliationPage() {
                     <th className="px-4 py-3 text-center">Estado</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-border">
                   {history.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-8 text-white/40">
+                      <td colSpan={6} className="text-center py-8 text-muted">
                         Sin registros de conciliación
                       </td>
                     </tr>
                   ) : (
                     history.map((log) => (
-                      <tr key={log.id} className="hover:bg-white/5">
-                        <td className="px-4 py-3 whitespace-nowrap text-white/70">
+                      <tr key={log.id} className="hover:bg-surface-elevated">
+                        <td className="px-4 py-3 whitespace-nowrap text-muted">
                           {format(new Date(log.createdAt), "dd/MM/yy HH:mm", { locale: es })}
                         </td>
                         <td className="px-4 py-3">{log.fundName}</td>

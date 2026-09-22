@@ -140,15 +140,15 @@ export function RecordModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       <div className="modal-panel animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-white/10 relative overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-border relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[50px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
           <h2 className="text-xl font-bold">{isEditing ? "Editar Registro" : "Nuevo Registro"}</h2>
           <button
             onClick={onClose}
-            className="p-2 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors relative z-10"
+            className="p-2 text-muted hover:text-foreground bg-surface-elevated hover:bg-border/40 rounded-full transition-colors relative z-10"
           >
             <X className="w-5 h-5" />
           </button>
@@ -157,9 +157,9 @@ export function RecordModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Monto</label>
+              <label className="text-sm font-medium text-foreground">Monto</label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="number"
                   name="amount"
@@ -172,7 +172,7 @@ export function RecordModal({
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Tipo</label>
+              <label className="text-sm font-medium text-foreground">Tipo</label>
               <select
                 name="type"
                 value={formData.type}
@@ -186,9 +186,9 @@ export function RecordModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-white/80">Descripción</label>
+            <label className="text-sm font-medium text-foreground">Descripción</label>
             <div className="relative">
-              <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-white/40" />
+              <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-muted" />
               <textarea
                 name="description"
                 required
@@ -201,7 +201,7 @@ export function RecordModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Fondo</label>
+              <label className="text-sm font-medium text-foreground">Fondo</label>
               <select
                 name="fund"
                 value={formData.fund}
@@ -213,7 +213,7 @@ export function RecordModal({
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Categoría</label>
+              <label className="text-sm font-medium text-foreground">Categoría</label>
               <select
                 name="categoryId"
                 value={formData.categoryId}
@@ -232,7 +232,7 @@ export function RecordModal({
 
           {formData.fund === "fondo_ahorro" && (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80 flex items-center gap-2">
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
                 <HardHat className="w-4 h-4 text-accent" />
                 Proyecto (opcional)
               </label>
@@ -253,7 +253,7 @@ export function RecordModal({
           )}
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-white/80 flex items-center gap-2">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
               <PartyPopper className="w-4 h-4 text-accent" />
               Actividad (opcional)
             </label>
@@ -273,9 +273,9 @@ export function RecordModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-white/80">Fecha</label>
+            <label className="text-sm font-medium text-foreground">Fecha</label>
             <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
               <input
                 type="date"
                 name="date"
@@ -291,7 +291,7 @@ export function RecordModal({
             <AttachmentPanel movementId={record.id} />
           )}
 
-          <div className="pt-6 border-t border-white/10 flex items-center justify-end gap-3 bg-white/5 -mx-6 -mb-6 p-6 rounded-b-2xl">
+          <div className="pt-6 border-t border-border flex items-center justify-end gap-3 bg-surface-elevated -mx-6 -mb-6 p-6 rounded-b-2xl">
             <button type="button" onClick={onClose} className="btn-secondary px-5 py-2">
               Cancelar
             </button>

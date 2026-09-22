@@ -394,7 +394,7 @@ export default function RecordsPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 md:mb-6">
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Gestión de Registros</h1>
-          <p className="text-white/60 text-sm md:text-base">Administra todos los ingresos y egresos de tu base de datos.</p>
+          <p className="text-muted text-sm md:text-base">Administra todos los ingresos y egresos de tu base de datos.</p>
         </div>
         
         {isAdminOrDirectiva && (
@@ -422,19 +422,19 @@ export default function RecordsPage() {
               </div>
               {showNewMenu && (
                 <div
-                  className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 z-30 min-w-[180px] glass-panel border border-white/10 shadow-xl py-1 animate-in fade-in zoom-in-95 duration-150"
+                  className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 z-30 min-w-[180px] glass-panel shadow-xl py-1 animate-in fade-in zoom-in-95 duration-150"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     onClick={() => openCreate("Ingreso")}
-                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 flex items-center gap-2 text-success"
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-surface-elevated flex items-center gap-2 text-success"
                   >
                     <ArrowUpRight className="w-4 h-4" />
                     Nuevo ingreso
                   </button>
                   <button
                     onClick={() => openCreate("Egreso")}
-                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 flex items-center gap-2 text-danger"
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-surface-elevated flex items-center gap-2 text-danger"
                   >
                     <ArrowDownRight className="w-4 h-4" />
                     Nuevo gasto
@@ -465,7 +465,7 @@ export default function RecordsPage() {
                 Pendientes de revisión: {categorization.poorQualityCount}{" "}
                 {categorization.poorQualityCount === 1 ? "movimiento" : "movimientos"}
               </p>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-white/60 text-xs md:text-sm mt-1">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted text-xs md:text-sm mt-1">
                 {categorization.uncategorizedCount > 0 && (
                   <span>Sin categoría: {categorization.uncategorizedCount}</span>
                 )}
@@ -493,23 +493,23 @@ export default function RecordsPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b border-white/10 pb-1">
-        <button 
+      <div className="flex gap-4 mb-6 border-b border-border pb-1">
+        <button
           onClick={() => setActiveTab("caja_chica")}
-          className={`pb-3 px-2 text-sm font-medium transition-colors relative ${activeTab === "caja_chica" ? "text-primary" : "text-white/50 hover:text-white/80"}`}
+          className={`pb-3 px-2 text-sm font-medium transition-colors relative ${activeTab === "caja_chica" ? "text-primary" : "text-muted hover:text-foreground"}`}
         >
           Caja Chica
           {activeTab === "caja_chica" && (
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
           )}
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("fondo_ahorro")}
-          className={`pb-3 px-2 text-sm font-medium transition-colors relative ${activeTab === "fondo_ahorro" ? "text-accent" : "text-white/50 hover:text-white/80"}`}
+          className={`pb-3 px-2 text-sm font-medium transition-colors relative ${activeTab === "fondo_ahorro" ? "text-accent" : "text-muted hover:text-foreground"}`}
         >
           Fondo de Ahorro
           {activeTab === "fondo_ahorro" && (
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
           )}
         </button>
       </div>
@@ -523,7 +523,7 @@ export default function RecordsPage() {
             className={`px-3 py-1.5 rounded-full text-xs md:text-sm font-medium transition-colors border flex-shrink-0 whitespace-nowrap ${
               typeFilter === chip.id
                 ? "bg-primary/20 text-primary border-primary/40"
-                : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/80"
+                : "bg-surface-elevated text-muted border-border hover:bg-border/40 hover:text-foreground"
             }`}
           >
             {chip.label}
@@ -533,7 +533,7 @@ export default function RecordsPage() {
               </span>
             )}
             {chip.id === "transferencia" && categorization.transferCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-white/10 text-white/50 text-[10px]">
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-surface-elevated text-muted text-[10px]">
                 {categorization.transferCount}
               </span>
             )}
@@ -545,7 +545,7 @@ export default function RecordsPage() {
       <div className="glass-panel p-4 mb-6 flex flex-col gap-4">
         <div className="flex flex-col md:flex-row items-center gap-4">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
             <input 
               type="text" 
               placeholder="Buscar por descripción o tipo..." 
@@ -593,9 +593,9 @@ export default function RecordsPage() {
 
         {/* Filtro de fechas */}
         {showDateFilter && (
-          <div className="flex flex-col md:flex-row items-center gap-4 pt-4 border-t border-white/10">
+          <div className="flex flex-col md:flex-row items-center gap-4 pt-4 border-t border-border">
             <div className="flex-1 w-full md:w-auto">
-              <label className="text-xs text-white/60 mb-1 block">Fecha desde</label>
+              <label className="text-xs text-muted mb-1 block">Fecha desde</label>
               <input
                 type="date"
                 value={startDate}
@@ -604,7 +604,7 @@ export default function RecordsPage() {
               />
             </div>
             <div className="flex-1 w-full md:w-auto">
-              <label className="text-xs text-white/60 mb-1 block">Fecha hasta</label>
+              <label className="text-xs text-muted mb-1 block">Fecha hasta</label>
               <input
                 type="date"
                 value={endDate}
@@ -625,18 +625,18 @@ export default function RecordsPage() {
 
         {/* Resumen de ingresos/egresos y calidad de datos */}
         {displayedRecords.length > 0 && (
-          <div className="pt-4 border-t border-white/10 space-y-3">
+          <div className="pt-4 border-t border-border space-y-3">
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-white/60">Total Ingresos:</span>
+                <span className="text-muted">Total Ingresos:</span>
                 <span className="text-success font-semibold">${totalIngresos.toLocaleString("es-CL")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-white/60">Total Egresos:</span>
+                <span className="text-muted">Total Egresos:</span>
                 <span className="text-danger font-semibold">${totalEgresos.toLocaleString("es-CL")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-white/60">Saldo:</span>
+                <span className="text-muted">Saldo:</span>
                 <span
                   className={`font-semibold ${
                     totalIngresos - totalEgresos >= 0 ? "text-success" : "text-danger"
@@ -657,7 +657,7 @@ export default function RecordsPage() {
                   </span>
                 </div>
                 {suggestionCount > 0 && isAdminOrDirectiva && (
-                  <span className="text-white/50 pl-5">
+                  <span className="text-muted pl-5">
                     {suggestionCount}{" "}
                     {suggestionCount === 1 ? "tiene" : "tienen"} categoría sugerida — usa el botón ✓ para
                     aplicar.
@@ -711,15 +711,15 @@ export default function RecordsPage() {
 
       {/* Tabla responsive — scroll horizontal en móvil */}
       <div className="glass-panel flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
-        <p className="md:hidden px-3 pt-3 text-[11px] text-white/40">
+        <p className="md:hidden px-3 pt-3 text-[11px] text-muted">
           Desliza horizontalmente para ver todas las columnas
         </p>
         <div className="overflow-x-auto md:flex-1 custom-scrollbar">
           <table className="w-full min-w-[640px] text-xs md:text-sm text-left border-collapse">
-            <thead className="text-xs uppercase bg-[#0f1115] border-b border-white/10 sticky top-0 z-10">
+            <thead className="text-xs uppercase table-head text-muted">
               <tr>
                 {isAdminOrDirectiva && (
-                  <th className="px-2 md:px-4 py-3 md:py-4 font-semibold text-white/80 w-10">
+                  <th className="px-2 md:px-4 py-3 md:py-4 font-semibold text-foreground/80 w-10">
                     <input
                       type="checkbox"
                       checked={
@@ -727,13 +727,13 @@ export default function RecordsPage() {
                         selectedIds.size === selectableRecords.length
                       }
                       onChange={toggleSelectAll}
-                      className="rounded border-white/20 bg-white/5"
+                      className="rounded border-border bg-surface"
                       title="Seleccionar todos"
                     />
                   </th>
                 )}
                 <th 
-                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-foreground/80 cursor-pointer hover:bg-surface-elevated transition-colors"
                   onClick={() => handleSort("date")}
                 >
                   <div className="flex items-center gap-1">
@@ -744,7 +744,7 @@ export default function RecordsPage() {
                   </div>
                 </th>
                 <th 
-                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-foreground/80 cursor-pointer hover:bg-surface-elevated transition-colors"
                   onClick={() => handleSort("description")}
                 >
                   <div className="flex items-center gap-1">
@@ -755,7 +755,7 @@ export default function RecordsPage() {
                   </div>
                 </th>
                 <th 
-                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-foreground/80 cursor-pointer hover:bg-surface-elevated transition-colors"
                   onClick={() => handleSort("type")}
                 >
                   <div className="flex items-center gap-1">
@@ -766,7 +766,7 @@ export default function RecordsPage() {
                   </div>
                 </th>
                 <th 
-                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+                  className="px-2 md:px-6 py-3 md:py-4 font-semibold text-foreground/80 cursor-pointer hover:bg-surface-elevated transition-colors"
                   onClick={() => handleSort("amount")}
                 >
                   <div className="flex items-center gap-1">
@@ -776,26 +776,26 @@ export default function RecordsPage() {
                     )}
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80">
+                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-foreground/80">
                   Categoría
                 </th>
-                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden lg:table-cell">
+                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-foreground/80 hidden lg:table-cell">
                   Actividad
                 </th>
-                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 hidden lg:table-cell">
+                <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-foreground/80 hidden lg:table-cell">
                   Sugerencia
                 </th>
                 {isAdminOrDirectiva && (
-                  <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-white/80 text-right">
+                  <th className="px-3 md:px-6 py-3 md:py-4 font-semibold text-foreground/80 text-right">
                     Acciones
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={tableColSpan} className="text-center py-8 text-white/50 text-sm">
+                  <td colSpan={tableColSpan} className="text-center py-8 text-muted text-sm">
                     Cargando movimientos...
                   </td>
                 </tr>
@@ -803,14 +803,14 @@ export default function RecordsPage() {
                 <tr>
                   <td colSpan={tableColSpan} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-white/50 text-base md:text-lg">No se encontraron registros</p>
+                      <p className="text-muted text-base md:text-lg">No se encontraron registros</p>
                       {(searchTerm ||
                         startDate ||
                         endDate ||
                         categoryFilter ||
                         eventFilter ||
                         typeFilter !== "all") && (
-                        <p className="text-white/40 text-xs md:text-sm">
+                        <p className="text-muted text-xs md:text-sm">
                           Intenta ajustar los filtros de búsqueda o fecha
                         </p>
                       )}
@@ -826,7 +826,7 @@ export default function RecordsPage() {
                 displayedRecords.map((record) => {
                   const suggestion = suggestionMap.get(record.id);
                   return (
-                  <tr key={record.id} className="hover:bg-white/5 transition-colors group">
+                  <tr key={record.id} className="hover:bg-surface-elevated transition-colors group">
                     {isAdminOrDirectiva && (
                       <td className="px-2 md:px-4 py-3 md:py-4">
                         {!record.transferId ? (
@@ -834,12 +834,12 @@ export default function RecordsPage() {
                             type="checkbox"
                             checked={selectedIds.has(record.id)}
                             onChange={() => toggleSelect(record.id)}
-                            className="rounded border-white/20 bg-white/5"
+                            className="rounded border-border bg-surface"
                           />
                         ) : null}
                       </td>
                     )}
-                    <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-white/80 text-[10px] md:text-sm">
+                    <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-foreground/80 text-[10px] md:text-sm">
                       <span className="md:hidden">{format(record.date, "dd/MM/yy")}</span>
                       <span className="hidden md:inline">{format(record.date, "dd MMM, yyyy", { locale: es })}</span>
                     </td>
@@ -861,13 +861,13 @@ export default function RecordsPage() {
                     </td>
                     <td className="px-3 md:px-6 py-3 md:py-4">
                       {record.transferId ? (
-                        <span className="text-white/40 text-[9px] md:text-[10px]">Transferencia</span>
+                        <span className="text-muted text-[9px] md:text-[10px]">Transferencia</span>
                       ) : record.categoryName ? (
                         <span
                           className={`px-1.5 md:px-2 py-0.5 rounded text-[9px] md:text-[10px] whitespace-nowrap ${
                             isPoorlyCategorized(record)
                               ? "bg-accent/10 text-accent border border-accent/20"
-                              : "bg-white/10 text-white/70"
+                              : "bg-surface-elevated text-muted"
                           }`}
                         >
                           {record.categoryName}
@@ -887,7 +887,7 @@ export default function RecordsPage() {
                           <span className="truncate">{record.eventName}</span>
                         </Link>
                       ) : (
-                        <span className="text-white/30 text-[9px] md:text-[10px]">—</span>
+                        <span className="text-muted text-[9px] md:text-[10px]">—</span>
                       )}
                     </td>
                     <td className="px-3 md:px-6 py-3 md:py-4 hidden lg:table-cell">
@@ -918,7 +918,7 @@ export default function RecordsPage() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-white/20 text-[9px] md:text-[10px]">—</span>
+                        <span className="text-muted text-[9px] md:text-[10px]">—</span>
                       )}
                     </td>
                     {isAdminOrDirectiva && (
@@ -927,21 +927,21 @@ export default function RecordsPage() {
                           <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100">
                             <button
                               onClick={() => openEdit(record)}
-                              className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-primary"
+                              className="p-1.5 rounded-lg hover:bg-surface-elevated text-muted hover:text-primary"
                               title="Editar"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleVoid(record)}
-                              className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-danger"
+                              className="p-1.5 rounded-lg hover:bg-surface-elevated text-muted hover:text-danger"
                               title="Anular"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         ) : (
-                          <span className="text-[10px] text-white/30">Transferencia</span>
+                          <span className="text-[10px] text-muted">Transferencia</span>
                         )}
                       </td>
                     )}
@@ -953,7 +953,7 @@ export default function RecordsPage() {
           </table>
         </div>
         
-        <div className="border-t border-white/10 p-3 md:p-4 text-xs md:text-sm text-white/60 bg-white/5">
+        <div className="border-t border-border p-3 md:p-4 text-xs md:text-sm text-muted bg-surface-elevated">
           Mostrando {displayedRecords.length} registros
         </div>
       </div>

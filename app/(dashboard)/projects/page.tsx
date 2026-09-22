@@ -42,7 +42,7 @@ export default function ProjectsPage() {
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Proyectos</h1>
-          <p className="text-white/60 text-sm md:text-base">
+          <p className="text-muted text-sm md:text-base">
             Inversiones del Fondo de Ahorro: con recaudación o ejecución con saldo acumulado.
           </p>
         </div>
@@ -58,11 +58,11 @@ export default function ProjectsPage() {
       </div>
 
       {isLoading ? (
-        <div className="glass-panel p-12 text-center text-white/50">Cargando proyectos...</div>
+        <div className="glass-panel p-12 text-center text-muted">Cargando proyectos...</div>
       ) : projects.length === 0 ? (
         <div className="glass-panel p-16 text-center">
-          <HardHat className="w-12 h-12 mx-auto mb-4 text-white/20" />
-          <p className="text-white/50 mb-4">No hay proyectos registrados</p>
+          <HardHat className="w-12 h-12 mx-auto mb-4 text-muted" />
+          <p className="text-muted mb-4">No hay proyectos registrados</p>
           {canManage && (
             <button onClick={() => setIsModalOpen(true)} className="btn-primary">
               Crear primer proyecto
@@ -83,7 +83,7 @@ export default function ProjectsPage() {
                     {project.name}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] uppercase tracking-wider text-white/40">
+                    <span className="text-[10px] uppercase tracking-wider text-muted">
                       {PROJECT_STATUS_LABELS[project.status]}
                     </span>
                     <ProjectFundingBadge fundingMode={project.fundingMode} />
@@ -109,15 +109,15 @@ export default function ProjectsPage() {
 
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 <div className="bg-success/10 rounded-lg p-2 border border-success/20">
-                  <p className="text-white/50">Ingresos</p>
+                  <p className="text-muted">Ingresos</p>
                   <p className="font-bold text-success font-mono">{formatMoney(project.totalIncome)}</p>
                 </div>
                 <div className="bg-danger/10 rounded-lg p-2 border border-danger/20">
-                  <p className="text-white/50">Gastos</p>
+                  <p className="text-muted">Gastos</p>
                   <p className="font-bold text-danger font-mono">{formatMoney(project.totalExpense)}</p>
                 </div>
-                <div className="bg-white/5 rounded-lg p-2 border border-white/10">
-                  <p className="text-white/50">Saldo</p>
+                <div className="bg-surface-elevated rounded-lg p-2 border border-border">
+                  <p className="text-muted">Saldo</p>
                   <p className={`font-bold font-mono ${project.balance >= 0 ? "text-success" : "text-danger"}`}>
                     {formatMoney(project.balance)}
                   </p>

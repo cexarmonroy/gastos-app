@@ -85,12 +85,12 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0d17] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
         <header className="mb-8 md:mb-10">
           <p className="text-primary text-sm font-semibold mb-2">Portal de transparencia</p>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">{summary.organizationName}</h1>
-          <p className="text-white/60">
+          <p className="text-muted">
             Resumen financiero de solo lectura · Último movimiento: {lastUpdateLabel}
           </p>
           <div className="flex flex-wrap gap-3 mt-5">
@@ -112,23 +112,23 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {summary.fundBalances.map((fund) => (
             <div key={fund.name} className="glass-panel p-5">
-              <p className="text-white/50 text-sm mb-1">{fund.name}</p>
+              <p className="text-muted text-sm mb-1">{fund.name}</p>
               <p className="text-2xl font-bold">{formatMoney(fund.balance)}</p>
             </div>
           ))}
           <div className="glass-panel p-5 border border-primary/20">
-            <p className="text-white/50 text-sm mb-1">Saldo total</p>
+            <p className="text-muted text-sm mb-1">Saldo total</p>
             <p className="text-2xl font-bold text-primary">{formatMoney(summary.totalSaldo)}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div className="glass-panel p-5">
-            <p className="text-white/50 text-sm mb-1">Total ingresos</p>
+            <p className="text-muted text-sm mb-1">Total ingresos</p>
             <p className="text-2xl font-bold text-success">{formatMoney(summary.totalIngresos)}</p>
           </div>
           <div className="glass-panel p-5">
-            <p className="text-white/50 text-sm mb-1">Total egresos</p>
+            <p className="text-muted text-sm mb-1">Total egresos</p>
             <p className="text-2xl font-bold text-danger">{formatMoney(summary.totalEgresos)}</p>
           </div>
         </div>
@@ -138,11 +138,11 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
             <h2 className="font-semibold mb-4">Top ingresos por categoría</h2>
             <div className="space-y-2">
               {summary.incomeBreakdown.length === 0 ? (
-                <p className="text-white/40 text-sm">Sin datos</p>
+                <p className="text-muted text-sm">Sin datos</p>
               ) : (
                 summary.incomeBreakdown.map((item) => (
                   <div key={item.categoryId ?? item.categoryName} className="flex justify-between text-sm">
-                    <span className="text-white/70">{item.categoryName}</span>
+                    <span className="text-muted">{item.categoryName}</span>
                     <span className="text-success font-mono">{formatMoney(item.total)}</span>
                   </div>
                 ))
@@ -153,11 +153,11 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
             <h2 className="font-semibold mb-4">Top gastos por categoría</h2>
             <div className="space-y-2">
               {summary.expenseBreakdown.length === 0 ? (
-                <p className="text-white/40 text-sm">Sin datos</p>
+                <p className="text-muted text-sm">Sin datos</p>
               ) : (
                 summary.expenseBreakdown.map((item) => (
                   <div key={item.categoryId ?? item.categoryName} className="flex justify-between text-sm">
-                    <span className="text-white/70">{item.categoryName}</span>
+                    <span className="text-muted">{item.categoryName}</span>
                     <span className="text-danger font-mono">{formatMoney(item.total)}</span>
                   </div>
                 ))
@@ -176,14 +176,14 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
                   ? (project.executionProgress ?? 0)
                   : (project.progress ?? 0);
                 return (
-                  <div key={project.name} className="border border-white/5 rounded-xl p-4">
+                  <div key={project.name} className="border border-border rounded-xl p-4">
                     <div className="flex flex-wrap justify-between gap-2 mb-2">
                       <p className="font-medium">{project.name}</p>
-                      <p className="text-sm text-white/50">
+                      <p className="text-sm text-muted">
                         {isExecution ? "Presupuesto" : "Meta"}: {formatMoney(project.targetAmount)}
                       </p>
                     </div>
-                    <div className="w-full bg-black/40 rounded-full h-2 mb-2">
+                    <div className="w-full bg-border rounded-full h-2 mb-2">
                       <div
                         className={`h-2 rounded-full ${
                           isExecution
@@ -193,7 +193,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
-                    <p className="text-xs text-white/50">
+                    <p className="text-xs text-muted">
                       {isExecution
                         ? `Ejecutado ${project.executionProgress ?? 0}% · Gastado ${formatMoney(project.totalExpense)}`
                         : `Avance ${project.progress ?? 0}% · Asignado ${formatMoney(project.totalIncome)} · Gastado ${formatMoney(project.totalExpense)}`}
@@ -206,13 +206,13 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
         )}
 
         <div className="glass-panel overflow-hidden">
-          <div className="p-5 border-b border-white/5">
+          <div className="p-5 border-b border-border">
             <h2 className="font-semibold">Últimos movimientos</h2>
-            <p className="text-sm text-white/50">{summary.movementCount} registros en total</p>
+            <p className="text-sm text-muted">{summary.movementCount} registros en total</p>
           </div>
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-sm min-w-[640px]">
-              <thead className="bg-white/5 text-white/60">
+              <thead className="table-head text-muted">
                 <tr>
                   <th className="text-left p-3">Fecha</th>
                   <th className="text-left p-3">Descripción</th>
@@ -223,7 +223,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
               </thead>
               <tbody>
                 {summary.recentMovements.map((movement, index) => (
-                  <tr key={`${movement.date}-${index}`} className="border-t border-white/5">
+                  <tr key={`${movement.date}-${index}`} className="border-t border-border">
                     <td className="p-3 whitespace-nowrap">
                       {formatCalendarDate(movement.date, "dd/MM/yyyy")}
                     </td>
@@ -245,7 +245,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
           </div>
         </div>
 
-        <p className="text-center text-xs text-white/30 mt-8">
+        <p className="text-center text-xs text-muted mt-8">
           Datos de solo lectura · Actualizado al consultar · {format(parseISO(summary.generatedAt), "dd/MM/yyyy HH:mm")}
         </p>
       </div>

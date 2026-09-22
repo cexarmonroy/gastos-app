@@ -95,43 +95,43 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
           <Shield className="w-7 h-7 text-primary" />
           Gestión de usuarios
         </h1>
-        <p className="text-white/60 text-sm mt-1">
+        <p className="text-muted text-sm mt-1">
           Invita usuarios para que puedan iniciar sesión con credenciales o Google.
         </p>
       </div>
 
       <div className="glass-panel p-6 max-w-lg">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <UserPlus className="w-5 h-5 text-primary" />
           Invitar usuario
         </h2>
 
         <form onSubmit={handleInvite} className="space-y-4">
           <div>
-            <label className="block text-sm text-white/70 mb-1">Email</label>
+            <label className="block text-sm text-muted mb-1">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+              className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-sm"
               placeholder="apoderado@ejemplo.cl"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-white/70 mb-1">Rol</label>
+            <label className="block text-sm text-muted mb-1">Rol</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as Role)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+              className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-sm"
             >
               {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                <option key={value} value={value} className="bg-[#1a1d2e]">
+                <option key={value} value={value}>
                   {label}
                 </option>
               ))}
@@ -139,14 +139,14 @@ export default function UsersPage() {
           </div>
 
           <div>
-            <label className="block text-sm text-white/70 mb-1">
+            <label className="block text-sm text-muted mb-1">
               Contraseña temporal (opcional)
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+              className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-sm"
               placeholder="Se genera automáticamente si se deja vacío"
               minLength={8}
             />
@@ -161,11 +161,11 @@ export default function UsersPage() {
                 Contraseña temporal (cópiala ahora, no se volverá a mostrar):
               </p>
               <div className="flex items-center gap-2">
-                <code className="text-white font-mono">{tempPassword}</code>
+                <code className="text-foreground font-mono">{tempPassword}</code>
                 <button
                   type="button"
                   onClick={copyPassword}
-                  className="p-1 text-white/60 hover:text-white"
+                  className="p-1 text-muted hover:text-foreground"
                 >
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -184,7 +184,7 @@ export default function UsersPage() {
       </div>
 
       <div className="glass-panel p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Usuarios registrados</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Usuarios registrados</h2>
 
         {isLoading ? (
           <div className="flex justify-center py-8">
@@ -194,7 +194,7 @@ export default function UsersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-white/50 border-b border-white/10">
+                <tr className="text-muted border-b border-border">
                   <th className="text-left py-2 pr-4">Email</th>
                   <th className="text-left py-2 pr-4">Rol</th>
                   <th className="text-left py-2">Acciones</th>
@@ -202,19 +202,19 @@ export default function UsersPage() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} className="border-b border-white/5">
-                    <td className="py-3 pr-4 text-white">{user.email}</td>
+                  <tr key={user.id} className="border-b border-border">
+                    <td className="py-3 pr-4 text-foreground">{user.email}</td>
                     <td className="py-3 pr-4">
-                      <span className="text-white/80">{ROLE_LABELS[user.role]}</span>
+                      <span className="text-foreground/80">{ROLE_LABELS[user.role]}</span>
                     </td>
                     <td className="py-3">
                       <select
                         value={user.role}
                         onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
-                        className="bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-xs"
+                        className="bg-surface border border-border rounded px-2 py-1 text-foreground text-xs"
                       >
                         {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                          <option key={value} value={value} className="bg-[#1a1d2e]">
+                          <option key={value} value={value}>
                             {label}
                           </option>
                         ))}

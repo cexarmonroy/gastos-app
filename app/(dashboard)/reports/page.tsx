@@ -91,22 +91,22 @@ const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => String(CURRENT_YEAR - i
 
 function FundBalancePanel({ snapshot }: { snapshot: FundBalanceSnapshot }) {
   return (
-    <div className="pt-3 border-t border-white/10 space-y-2">
-      <p className="text-white/50 text-xs uppercase tracking-wide flex items-center gap-1.5">
+    <div className="pt-3 border-t border-border space-y-2">
+      <p className="text-muted text-xs uppercase tracking-wide flex items-center gap-1.5">
         <Wallet className="w-3.5 h-3.5" />
         Posición del fondo · {snapshot.fundLabel}
       </p>
       <div className="grid grid-cols-3 gap-2 text-xs">
         <div>
-          <p className="text-white/40 mb-0.5">Inicial</p>
-          <p className="font-mono text-white/80">{formatMoney(snapshot.saldoInicial)}</p>
+          <p className="text-muted mb-0.5">Inicial</p>
+          <p className="font-mono text-foreground/80">{formatMoney(snapshot.saldoInicial)}</p>
         </div>
         <div>
-          <p className="text-white/40 mb-0.5">Final</p>
-          <p className="font-mono text-white/80">{formatMoney(snapshot.saldoFinal)}</p>
+          <p className="text-muted mb-0.5">Final</p>
+          <p className="font-mono text-foreground/80">{formatMoney(snapshot.saldoFinal)}</p>
         </div>
         <div>
-          <p className="text-white/40 mb-0.5">Cambio</p>
+          <p className="text-muted mb-0.5">Cambio</p>
           <p
             className={`font-mono font-semibold ${
               snapshot.cambioSaldo >= 0 ? "text-success" : "text-danger"
@@ -118,14 +118,14 @@ function FundBalancePanel({ snapshot }: { snapshot: FundBalanceSnapshot }) {
         </div>
       </div>
       {snapshot.cajaChica && snapshot.fondoAhorro && (
-        <p className="text-white/35 text-[11px] leading-snug">
+        <p className="text-muted text-[11px] leading-snug">
           Caja {formatMoney(snapshot.cajaChica.saldoInicial)} → {formatMoney(snapshot.cajaChica.saldoFinal)}
           {" · "}
           Fondo {formatMoney(snapshot.fondoAhorro.saldoInicial)} →{" "}
           {formatMoney(snapshot.fondoAhorro.saldoFinal)}
         </p>
       )}
-      <p className="text-white/30 text-[10px]">
+      <p className="text-muted text-[10px]">
         Incluye transferencias entre fondos. Distinto al resultado operativo del período.
       </p>
     </div>
@@ -144,18 +144,18 @@ function ComparisonDelta({
   const deltaAmount = metric.current - metric.previous;
 
   if (!metric.hasPreviousData) {
-    return <span className="text-white/30 text-[11px]">Sin datos en {previousLabel}</span>;
+    return <span className="text-muted text-[11px]">Sin datos en {previousLabel}</span>;
   }
   if (metric.direction === "new") {
     return (
-      <span className="text-white/40 text-[11px]">
+      <span className="text-muted text-[11px]">
         {formatMoney(metric.current)} en este período (sin base en {previousLabel})
       </span>
     );
   }
   if (metric.deltaPercent === null || metric.direction === "flat") {
     return (
-      <span className="text-white/40 text-[11px] flex items-center gap-0.5">
+      <span className="text-muted text-[11px] flex items-center gap-0.5">
         <Minus className="w-3 h-3" />
         Sin cambio vs {previousLabel}
       </span>
@@ -186,7 +186,7 @@ function ComparisonDelta({
       <Icon className="w-3 h-3" />
       {isPositive ? "+" : ""}
       {metric.deltaPercent}% vs {previousLabel}
-      <span className="text-white/30 ml-0.5">
+      <span className="text-muted ml-0.5">
         ({deltaAmount >= 0 ? "+" : ""}
         {formatMoney(deltaAmount)})
       </span>
@@ -620,7 +620,7 @@ export default function ReportsPage() {
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Reportes</h1>
-          <p className="text-white/60 text-sm md:text-base">
+          <p className="text-muted text-sm md:text-base">
             {isAssemblyMode
               ? "Rendición de cuentas para asamblea con saldos, actividades y proyectos."
               : isActivityMode
@@ -668,18 +668,18 @@ export default function ReportsPage() {
           <p className="text-sm font-semibold mb-3">Este reporte incluirá</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-white/40 uppercase tracking-wide mb-2">PDF</p>
+              <p className="text-xs text-muted uppercase tracking-wide mb-2">PDF</p>
               <ul className="space-y-1.5">
                 {exportChecklistPdf.map((item) => (
                   <li
                     key={item.label}
                     className={`flex items-start gap-2 text-xs ${
-                      item.included ? "text-white/70" : "text-white/30"
+                      item.included ? "text-muted" : "text-muted"
                     }`}
                   >
                     <Check
                       className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${
-                        item.included ? "text-success" : "text-white/20"
+                        item.included ? "text-success" : "text-muted"
                       }`}
                     />
                     {item.label}
@@ -688,10 +688,10 @@ export default function ReportsPage() {
               </ul>
             </div>
             <div>
-              <p className="text-xs text-white/40 uppercase tracking-wide mb-2">CSV</p>
+              <p className="text-xs text-muted uppercase tracking-wide mb-2">CSV</p>
               <ul className="space-y-1.5">
                 {exportChecklistCsv.map((item) => (
-                  <li key={item.label} className="flex items-start gap-2 text-xs text-white/70">
+                  <li key={item.label} className="flex items-start gap-2 text-xs text-muted">
                     <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-success" />
                     {item.label}
                   </li>
@@ -730,8 +730,8 @@ export default function ReportsPage() {
               }
               className={`flex-shrink-0 min-w-[7.25rem] md:min-w-0 p-3 md:p-4 rounded-lg border transition-all ${
                 reportType === type
-                  ? "bg-primary/20 border-primary text-white"
-                  : "bg-white/5 border-white/10 text-white/60 hover:border-primary/50"
+                  ? "bg-primary/20 border-primary text-primary"
+                  : "bg-surface-elevated border-border text-muted hover:border-primary/50"
               }`}
             >
               <Icon className="w-5 h-5 md:w-6 md:h-6 mb-1.5 md:mb-2 mx-auto" />
@@ -763,14 +763,14 @@ export default function ReportsPage() {
               <div className="flex items-start gap-3">
                 <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div className="space-y-2 text-sm leading-relaxed">
-                  <p className="text-white/80 font-medium">
+                  <p className="text-foreground/80 font-medium">
                     Resumen simplificado para presentar a socios y apoderados en asamblea.
                   </p>
-                  <p className="text-white/50">
+                  <p className="text-muted">
                     Incluye saldos de tesorería, resultado anual sin transferencias, actividades con
                     meta y ganancia, y proyectos con avance. Los datos se calculan en el servidor.
                   </p>
-                  <p className="text-white/35 text-xs">
+                  <p className="text-muted text-xs">
                     No incluye detalle movimiento a movimiento ni gráficos — ideal para proyección en
                     reunión.
                   </p>
@@ -780,39 +780,39 @@ export default function ReportsPage() {
           </div>
 
           {isPageLoading ? (
-            <div className="glass-panel p-8 text-center text-white/50">Cargando datos de asamblea...</div>
+            <div className="glass-panel p-8 text-center text-muted">Cargando datos de asamblea...</div>
           ) : previewMessage ? (
-            <div className="glass-panel p-6 text-white/50 text-sm flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-white/40" />
+            <div className="glass-panel p-6 text-muted text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-muted" />
               {previewMessage}
             </div>
           ) : assemblySnapshot ? (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <div className="glass-panel p-4 col-span-2 lg:col-span-1">
-                  <p className="text-white/60 text-xs mb-1">Saldo total</p>
+                  <p className="text-muted text-xs mb-1">Saldo total</p>
                   <p className="text-lg md:text-xl font-bold">
                     ${assemblySnapshot.saldoTotal.toLocaleString("es-CL")}
                   </p>
-                  <p className="text-white/40 text-[11px] mt-1 leading-snug">
+                  <p className="text-muted text-[11px] mt-1 leading-snug">
                     Caja ${assemblySnapshot.saldoCajaChica.toLocaleString("es-CL")} · Fondo{" "}
                     ${assemblySnapshot.saldoFondoAhorro.toLocaleString("es-CL")}
                   </p>
                 </div>
                 <div className="glass-panel p-4">
-                  <p className="text-white/60 text-xs mb-1">Ingresos {selectedYear}</p>
+                  <p className="text-muted text-xs mb-1">Ingresos {selectedYear}</p>
                   <p className="text-lg md:text-xl font-bold text-success">
                     ${activeTotals.totalIngresos.toLocaleString("es-CL")}
                   </p>
                 </div>
                 <div className="glass-panel p-4">
-                  <p className="text-white/60 text-xs mb-1">Egresos {selectedYear}</p>
+                  <p className="text-muted text-xs mb-1">Egresos {selectedYear}</p>
                   <p className="text-lg md:text-xl font-bold text-danger">
                     ${activeTotals.totalEgresos.toLocaleString("es-CL")}
                   </p>
                 </div>
                 <div className="glass-panel p-4">
-                  <p className="text-white/60 text-xs mb-1">Resultado {selectedYear}</p>
+                  <p className="text-muted text-xs mb-1">Resultado {selectedYear}</p>
                   <p
                     className={`text-lg md:text-xl font-bold ${
                       activeTotals.resultado >= 0 ? "text-success" : "text-danger"
@@ -832,23 +832,23 @@ export default function ReportsPage() {
                   {assemblySnapshot.events.length > 0 ? (
                     <div className="space-y-3">
                       {assemblySnapshot.events.map((event) => (
-                        <div key={event.id} className="border border-white/10 rounded-lg p-3 md:p-4">
+                        <div key={event.id} className="border border-border rounded-lg p-3 md:p-4">
                           <p className="font-medium text-sm md:text-base">{event.name}</p>
                           <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2 text-xs md:text-sm">
                             <div>
-                              <p className="text-white/50">Ingresos</p>
+                              <p className="text-muted">Ingresos</p>
                               <p className="text-success font-mono">
                                 ${event.totalIncome.toLocaleString("es-CL")}
                               </p>
                             </div>
                             <div>
-                              <p className="text-white/50">Gastos</p>
+                              <p className="text-muted">Gastos</p>
                               <p className="text-danger font-mono">
                                 ${event.totalExpense.toLocaleString("es-CL")}
                               </p>
                             </div>
                             <div>
-                              <p className="text-white/50">Ganancia</p>
+                              <p className="text-muted">Ganancia</p>
                               <p
                                 className={`font-mono font-semibold ${
                                   event.profit >= 0 ? "text-success" : "text-danger"
@@ -859,7 +859,7 @@ export default function ReportsPage() {
                             </div>
                             {event.goal != null && (
                               <div>
-                                <p className="text-white/50">Meta</p>
+                                <p className="text-muted">Meta</p>
                                 <p className="font-mono">
                                   ${event.goal.toLocaleString("es-CL")}
                                   {event.goalProgress != null ? ` (${event.goalProgress}%)` : ""}
@@ -871,7 +871,7 @@ export default function ReportsPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-white/40 text-sm">Sin actividades con movimientos en {selectedYear}.</p>
+                    <p className="text-muted text-sm">Sin actividades con movimientos en {selectedYear}.</p>
                   )}
                 </div>
 
@@ -883,17 +883,17 @@ export default function ReportsPage() {
                   {assemblySnapshot.projects.length > 0 ? (
                     <div className="space-y-3">
                       {assemblySnapshot.projects.map((project) => (
-                        <div key={project.id} className="border border-white/10 rounded-lg p-3 md:p-4">
+                        <div key={project.id} className="border border-border rounded-lg p-3 md:p-4">
                           <p className="font-medium text-sm md:text-base">{project.name}</p>
                           <div className="mt-2 grid grid-cols-3 gap-3 text-xs md:text-sm">
                             <div>
-                              <p className="text-white/50">
+                              <p className="text-muted">
                                 {project.fundingMode === "EXECUTION" ? "Presupuesto" : "Meta"}
                               </p>
                               <p className="font-mono">${project.targetAmount.toLocaleString("es-CL")}</p>
                             </div>
                             <div>
-                              <p className="text-white/50">
+                              <p className="text-muted">
                                 {project.fundingMode === "EXECUTION" ? "Gastos" : "Ingresos"}
                               </p>
                               <p
@@ -909,7 +909,7 @@ export default function ReportsPage() {
                               </p>
                             </div>
                             <div>
-                              <p className="text-white/50">
+                              <p className="text-muted">
                                 {project.fundingMode === "EXECUTION" ? "Ejecutado" : "Avance"}
                               </p>
                               <p className="font-mono text-accent">
@@ -923,7 +923,7 @@ export default function ReportsPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-white/40 text-sm">Sin proyectos con movimientos en {selectedYear}.</p>
+                    <p className="text-muted text-sm">Sin proyectos con movimientos en {selectedYear}.</p>
                   )}
                 </div>
               </div>
@@ -958,7 +958,7 @@ export default function ReportsPage() {
               )}
             </div>
 
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-border">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-primary" />
                 Mes del reporte
@@ -971,7 +971,7 @@ export default function ReportsPage() {
               />
             </div>
 
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-border">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-accent" />
                 Fondo
@@ -983,8 +983,8 @@ export default function ReportsPage() {
                     onClick={() => handleFundChange(fund)}
                     className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border transition-all ${
                       selectedFund === fund
-                        ? "bg-primary/20 border-primary text-white"
-                        : "bg-white/5 border-white/10 text-white/60 hover:border-primary/40"
+                        ? "bg-primary/20 border-primary text-primary"
+                        : "bg-surface-elevated border-border text-muted hover:border-primary/40"
                     }`}
                   >
                     {fund === "todos" ? "Todos" : fund === "caja_chica" ? "Caja Chica" : "Fondo de Ahorro"}
@@ -995,22 +995,22 @@ export default function ReportsPage() {
           </div>
 
           {isPageLoading ? (
-            <div className="glass-panel p-8 text-center text-white/50">Cargando datos...</div>
+            <div className="glass-panel p-8 text-center text-muted">Cargando datos...</div>
           ) : previewMessage ? (
-            <div className="glass-panel p-6 text-white/50 text-sm flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-white/40" />
+            <div className="glass-panel p-6 text-muted text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-muted" />
               {previewMessage}
             </div>
           ) : selectedEventGoal && selectedActivity ? (
             <>
               <div className="glass-panel p-4 md:p-5">
-                <p className="text-white/50 text-sm mb-1">{periodLabel}</p>
+                <p className="text-muted text-sm mb-1">{periodLabel}</p>
                 <h2 className="text-xl md:text-2xl font-bold">{selectedActivity.name}</h2>
               </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <div className="glass-panel p-4">
-                  <p className="text-white/60 text-xs mb-1">Ingresos</p>
+                  <p className="text-muted text-xs mb-1">Ingresos</p>
                   <p className="text-lg md:text-xl font-bold text-success font-mono">
                     {formatMoney(selectedEventGoal.totalIncome)}
                   </p>
@@ -1024,7 +1024,7 @@ export default function ReportsPage() {
                   )}
                 </div>
                 <div className="glass-panel p-4">
-                  <p className="text-white/60 text-xs mb-1">Gastos</p>
+                  <p className="text-muted text-xs mb-1">Gastos</p>
                   <p className="text-lg md:text-xl font-bold text-danger font-mono">
                     {formatMoney(selectedEventGoal.totalExpense)}
                   </p>
@@ -1039,7 +1039,7 @@ export default function ReportsPage() {
                   )}
                 </div>
                 <div className="glass-panel p-4">
-                  <p className="text-white/60 text-xs mb-1">Ganancia</p>
+                  <p className="text-muted text-xs mb-1">Ganancia</p>
                   <p
                     className={`text-lg md:text-xl font-bold font-mono ${
                       selectedEventGoal.profit >= 0 ? "text-success" : "text-danger"
@@ -1058,11 +1058,11 @@ export default function ReportsPage() {
                   )}
                 </div>
                 <div className="glass-panel p-4">
-                  <p className="text-white/60 text-xs mb-1">ROI</p>
+                  <p className="text-muted text-xs mb-1">ROI</p>
                   <p className="text-lg md:text-xl font-bold text-accent font-mono">
                     {activityRoi != null ? `${activityRoi}%` : "—"}
                   </p>
-                  <p className="text-white/40 text-[11px] mt-2">Ganancia / gastos</p>
+                  <p className="text-muted text-[11px] mt-2">Ganancia / gastos</p>
                 </div>
               </div>
 
@@ -1074,26 +1074,26 @@ export default function ReportsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   {selectedEventGoal.goal != null && (
                     <div>
-                      <p className="text-white/50 text-xs mb-1">Meta</p>
+                      <p className="text-muted text-xs mb-1">Meta</p>
                       <p className="font-mono font-semibold">{formatMoney(selectedEventGoal.goal)}</p>
                     </div>
                   )}
                   <div>
-                    <p className="text-white/50 text-xs mb-1">Ingresos</p>
+                    <p className="text-muted text-xs mb-1">Ingresos</p>
                     <p className="font-mono text-success">{formatMoney(selectedEventGoal.totalIncome)}</p>
                   </div>
                   <div>
-                    <p className="text-white/50 text-xs mb-1">Gastos</p>
+                    <p className="text-muted text-xs mb-1">Gastos</p>
                     <p className="font-mono text-danger">{formatMoney(selectedEventGoal.totalExpense)}</p>
                   </div>
                   <div>
-                    <p className="text-white/50 text-xs mb-1">Avance meta</p>
+                    <p className="text-muted text-xs mb-1">Avance meta</p>
                     <p className="font-mono text-accent">
                       {selectedEventGoal.goalProgress != null ? `${selectedEventGoal.goalProgress}%` : "—"}
                     </p>
                   </div>
                 </div>
-                <p className="text-white/40 text-xs mt-4">
+                <p className="text-muted text-xs mt-4">
                   {activeTotals.operationalCount} movimientos operativos
                   {activeTotals.transferCount > 0 &&
                     ` · ${activeTotals.transferCount} transferencia${activeTotals.transferCount !== 1 ? "s" : ""}`}
@@ -1114,7 +1114,7 @@ export default function ReportsPage() {
                       <div className="space-y-2">
                         {incomeBreakdown.slice(0, 6).map((item) => (
                           <div key={item.categoryId} className="flex justify-between text-xs gap-2">
-                            <span className="text-white/70 truncate">{item.categoryName}</span>
+                            <span className="text-muted truncate">{item.categoryName}</span>
                             <span className="text-success font-mono flex-shrink-0">
                               {formatMoney(item.total)}
                             </span>
@@ -1129,7 +1129,7 @@ export default function ReportsPage() {
                       <div className="space-y-2">
                         {expenseBreakdown.slice(0, 6).map((item) => (
                           <div key={item.categoryId} className="flex justify-between text-xs gap-2">
-                            <span className="text-white/70 truncate">{item.categoryName}</span>
+                            <span className="text-muted truncate">{item.categoryName}</span>
                             <span className="text-danger font-mono flex-shrink-0">
                               {formatMoney(item.total)}
                             </span>
@@ -1199,11 +1199,11 @@ export default function ReportsPage() {
                 </>
               )}
               {reportType === "completo" && (
-                <p className="text-white/50 text-sm">Todos los registros históricos.</p>
+                <p className="text-muted text-sm">Todos los registros históricos.</p>
               )}
             </div>
 
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-border">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-accent" />
                 Fondo
@@ -1215,8 +1215,8 @@ export default function ReportsPage() {
                     onClick={() => handleFundChange(fund)}
                     className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border transition-all ${
                       selectedFund === fund
-                        ? "bg-primary/20 border-primary text-white"
-                        : "bg-white/5 border-white/10 text-white/60 hover:border-primary/40"
+                        ? "bg-primary/20 border-primary text-primary"
+                        : "bg-surface-elevated border-border text-muted hover:border-primary/40"
                     }`}
                   >
                     {fund === "todos" ? "Todos" : fund === "caja_chica" ? "Caja Chica" : "Fondo de Ahorro"}
@@ -1227,7 +1227,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="glass-panel p-4 md:p-6 space-y-4">
-            <p className="text-white/40 text-xs uppercase tracking-wide">Filtros adicionales</p>
+            <p className="text-muted text-xs uppercase tracking-wide">Filtros adicionales</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -1266,7 +1266,7 @@ export default function ReportsPage() {
                   ))}
                 </select>
                 {selectedFund === "caja_chica" && (
-                  <p className="text-white/40 text-xs mt-1">Los proyectos pertenecen al Fondo de Ahorro.</p>
+                  <p className="text-muted text-xs mt-1">Los proyectos pertenecen al Fondo de Ahorro.</p>
                 )}
               </div>
             </div>
@@ -1300,21 +1300,21 @@ export default function ReportsPage() {
             </h3>
             {executiveSummary && (
               <div className="mb-4 space-y-1">
-                <p className="text-white/40 text-xs">
+                <p className="text-muted text-xs">
                   {periodLabel} · {executiveSummary.fundLabel}
                 </p>
                 {periodComparison && (
-                  <p className="text-white/30 text-[10px]">
+                  <p className="text-muted text-[10px]">
                     Variación bajo cada total: cambio respecto a {periodComparison.previousLabel}
                   </p>
                 )}
               </div>
             )}
             {isPageLoading ? (
-              <p className="text-white/50 text-sm">Cargando...</p>
+              <p className="text-muted text-sm">Cargando...</p>
             ) : previewMessage ? (
-              <p className="text-white/50 text-sm flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-white/40" />
+              <p className="text-muted text-sm flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-muted" />
                 {previewMessage}
               </p>
             ) : executiveSummary ? (
@@ -1322,7 +1322,7 @@ export default function ReportsPage() {
                 <div className="grid grid-cols-1 gap-3">
                   <div>
                     <div className="flex justify-between items-baseline">
-                      <span className="text-white/60 text-sm">Ingresos</span>
+                      <span className="text-muted text-sm">Ingresos</span>
                       <span className="text-lg font-bold text-success font-mono">
                         {formatMoney(activeTotals.totalIngresos)}
                       </span>
@@ -1336,7 +1336,7 @@ export default function ReportsPage() {
                   </div>
                   <div>
                     <div className="flex justify-between items-baseline">
-                      <span className="text-white/60 text-sm">Egresos</span>
+                      <span className="text-muted text-sm">Egresos</span>
                       <span className="text-lg font-bold text-danger font-mono">
                         {formatMoney(activeTotals.totalEgresos)}
                       </span>
@@ -1349,9 +1349,9 @@ export default function ReportsPage() {
                       />
                     )}
                   </div>
-                  <div className="pt-2 border-t border-white/10">
+                  <div className="pt-2 border-t border-border">
                     <div className="flex justify-between items-baseline">
-                      <span className="text-white/60 text-sm font-medium">Resultado</span>
+                      <span className="text-muted text-sm font-medium">Resultado</span>
                       <span
                         className={`text-lg font-bold font-mono ${
                           activeTotals.resultado >= 0 ? "text-success" : "text-danger"
@@ -1374,20 +1374,20 @@ export default function ReportsPage() {
 
                 {executiveSummary.topIncomes.length > 0 && (
                   <div>
-                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">
+                    <p className="text-muted text-xs uppercase tracking-wide mb-1">
                       Principales ingresos
                     </p>
-                    <p className="text-white/30 text-[10px] mb-2">
+                    <p className="text-muted text-[10px] mb-2">
                       % = participación sobre el total de ingresos del período
                     </p>
                     <div className="space-y-2">
                       {executiveSummary.topIncomes.map((item) => (
                         <div key={item.label} className="flex justify-between gap-2 text-xs">
-                          <span className="text-white/70 truncate">{item.label}</span>
+                          <span className="text-muted truncate">{item.label}</span>
                           <div className="text-right flex-shrink-0">
                             <p className="text-success font-mono">{formatMoney(item.amount)}</p>
                             {incomeBreakdown.length > 1 && (
-                              <p className="text-white/35 text-[10px]">
+                              <p className="text-muted text-[10px]">
                                 {formatShareOfTotal(item.sharePercent, "ingresos")}
                               </p>
                             )}
@@ -1400,20 +1400,20 @@ export default function ReportsPage() {
 
                 {executiveSummary.topExpenses.length > 0 && (
                   <div>
-                    <p className="text-white/50 text-xs uppercase tracking-wide mb-1">
+                    <p className="text-muted text-xs uppercase tracking-wide mb-1">
                       Principales gastos
                     </p>
-                    <p className="text-white/30 text-[10px] mb-2">
+                    <p className="text-muted text-[10px] mb-2">
                       % = participación sobre el total de gastos del período
                     </p>
                     <div className="space-y-2">
                       {executiveSummary.topExpenses.map((item) => (
                         <div key={item.label} className="flex justify-between gap-2 text-xs">
-                          <span className="text-white/70 truncate">{item.label}</span>
+                          <span className="text-muted truncate">{item.label}</span>
                           <div className="text-right flex-shrink-0">
                             <p className="text-danger font-mono">{formatMoney(item.amount)}</p>
                             {expenseBreakdown.length > 1 && (
-                              <p className="text-white/35 text-[10px]">
+                              <p className="text-muted text-[10px]">
                                 {formatShareOfTotal(item.sharePercent, "gastos")}
                               </p>
                             )}
@@ -1424,10 +1424,10 @@ export default function ReportsPage() {
                   </div>
                 )}
 
-                <div className="pt-3 border-t border-white/10 space-y-2 text-xs">
+                <div className="pt-3 border-t border-border space-y-2 text-xs">
                   <div className="flex justify-between gap-2">
-                    <span className="text-white/50">Actividad principal</span>
-                    <span className="text-white/80 text-right">
+                    <span className="text-muted">Actividad principal</span>
+                    <span className="text-foreground/80 text-right">
                       {executiveSummary.filteredActivityName ??
                         (executiveSummary.mainActivity
                           ? `${executiveSummary.mainActivity.name} (${formatMoney(executiveSummary.mainActivity.income)})`
@@ -1435,26 +1435,26 @@ export default function ReportsPage() {
                     </span>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-white/50">Proyecto</span>
-                    <span className="text-white/80 text-right">
+                    <span className="text-muted">Proyecto</span>
+                    <span className="text-foreground/80 text-right">
                       {executiveSummary.filteredProjectName ??
                         (executiveSummary.mainProject?.name ?? "Ninguno")}
                     </span>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-white/50">Movimientos</span>
-                    <span className="text-white/80">{activeTotals.operationalCount} operativos</span>
+                    <span className="text-muted">Movimientos</span>
+                    <span className="text-foreground/80">{activeTotals.operationalCount} operativos</span>
                   </div>
                   {activeTotals.transferCount > 0 && (
                     <div className="flex justify-between gap-2">
-                      <span className="text-white/50">Transferencias</span>
-                      <span className="text-white/80">{activeTotals.transferCount}</span>
+                      <span className="text-muted">Transferencias</span>
+                      <span className="text-foreground/80">{activeTotals.transferCount}</span>
                     </div>
                   )}
                 </div>
 
                 {selectedEventGoal && (
-                  <div className="pt-3 border-t border-white/10">
+                  <div className="pt-3 border-t border-border">
                     <p className="text-accent text-xs font-medium mb-2 flex items-center gap-1.5">
                       <PartyPopper className="w-3.5 h-3.5" />
                       Meta vs real — {selectedEventGoal.name}
@@ -1462,12 +1462,12 @@ export default function ReportsPage() {
                     <div className="space-y-1 text-xs">
                       {selectedEventGoal.goal != null && (
                         <div className="flex justify-between">
-                          <span className="text-white/50">Meta</span>
+                          <span className="text-muted">Meta</span>
                           <span className="font-mono">{formatMoney(selectedEventGoal.goal)}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-white/50">Ganancia</span>
+                        <span className="text-muted">Ganancia</span>
                         <span
                           className={`font-mono font-semibold ${
                             selectedEventGoal.profit >= 0 ? "text-success" : "text-danger"
@@ -1477,7 +1477,7 @@ export default function ReportsPage() {
                         </span>
                       </div>
                       {selectedEventGoal.goalProgress != null && (
-                        <p className="text-white/40">Avance meta: {selectedEventGoal.goalProgress}%</p>
+                        <p className="text-muted">Avance meta: {selectedEventGoal.goalProgress}%</p>
                       )}
                     </div>
                   </div>
@@ -1495,19 +1495,19 @@ export default function ReportsPage() {
             <h3 className="font-semibold mb-3">Ingresos vs Egresos</h3>
             <div className="grid grid-cols-3 gap-2 mb-4 text-center text-xs md:text-sm">
               <div className="rounded-lg bg-success/10 px-2 py-2">
-                <p className="text-white/50 mb-0.5">Ingresos</p>
+                <p className="text-muted mb-0.5">Ingresos</p>
                 <p className="font-mono font-semibold text-success">
                   {formatMoney(activeTotals.totalIngresos)}
                 </p>
               </div>
               <div className="rounded-lg bg-danger/10 px-2 py-2">
-                <p className="text-white/50 mb-0.5">Egresos</p>
+                <p className="text-muted mb-0.5">Egresos</p>
                 <p className="font-mono font-semibold text-danger">
                   {formatMoney(activeTotals.totalEgresos)}
                 </p>
               </div>
-              <div className="rounded-lg bg-white/5 px-2 py-2">
-                <p className="text-white/50 mb-0.5">Resultado</p>
+              <div className="rounded-lg bg-surface-elevated px-2 py-2">
+                <p className="text-muted mb-0.5">Resultado</p>
                 <p
                   className={`font-mono font-semibold ${
                     activeTotals.resultado >= 0 ? "text-success" : "text-danger"
@@ -1521,16 +1521,16 @@ export default function ReportsPage() {
             <div className="flex-1 min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" vertical={false} />
                   <XAxis
                     dataKey="name"
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(15,23,42,0.35)"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(15,23,42,0.35)"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
@@ -1540,10 +1540,10 @@ export default function ReportsPage() {
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1a1d2d",
-                      borderColor: "rgba(255,255,255,0.1)",
+                      backgroundColor: "#ffffff",
+                      borderColor: "#e2e8f0",
                       borderRadius: "12px",
-                      color: "#fff",
+                      color: "#0f172a",
                     }}
                     formatter={(value) => [`$${Number(value).toLocaleString("es-CL")}`, "Monto"]}
                   />
@@ -1571,7 +1571,7 @@ export default function ReportsPage() {
             </div>
             <div className="flex-1 min-h-[200px]">
               {activePieBreakdown.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-white/40 text-sm">
+                <div className="h-full flex items-center justify-center text-muted text-sm">
                   Sin {chartBreakdownMode === "egreso" ? "gastos" : "ingresos"} en este período
                 </div>
               ) : showPieChart ? (
@@ -1593,10 +1593,10 @@ export default function ReportsPage() {
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#1a1d2d",
-                        borderColor: "rgba(255,255,255,0.1)",
+                        backgroundColor: "#ffffff",
+                        borderColor: "#e2e8f0",
                         borderRadius: "12px",
-                        color: "#fff",
+                        color: "#0f172a",
                       }}
                       formatter={(value) => [`$${Number(value).toLocaleString("es-CL")}`, "Total"]}
                     />
@@ -1612,10 +1612,10 @@ export default function ReportsPage() {
                     return (
                       <div
                         key={`${item.categoryId}-${item.type}`}
-                        className="flex justify-between items-center text-sm border-b border-white/5 pb-2"
+                        className="flex justify-between items-center text-sm border-b border-border pb-2"
                       >
-                        <span className="text-white/80">{item.categoryName}</span>
-                        <span className="font-mono text-white/60">
+                        <span className="text-foreground/80">{item.categoryName}</span>
+                        <span className="font-mono text-muted">
                           {pct}% · {formatMoney(item.total)}
                         </span>
                       </div>
@@ -1629,7 +1629,7 @@ export default function ReportsPage() {
                 {pieChartData.map((item) => (
                   <span
                     key={item.name}
-                    className="inline-flex items-center gap-1.5 text-xs text-white/60"
+                    className="inline-flex items-center gap-1.5 text-xs text-muted"
                   >
                     <span
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"

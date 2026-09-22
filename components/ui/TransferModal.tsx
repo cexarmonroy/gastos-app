@@ -62,17 +62,17 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       <div className="modal-panel animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-2">
             <ArrowRightLeft className="w-5 h-5 text-accent" />
             <h2 className="text-xl font-bold">Nueva Transferencia</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2 text-muted hover:text-foreground bg-surface-elevated hover:bg-border/40 rounded-full transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -81,7 +81,7 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Desde</label>
+              <label className="text-sm font-medium text-foreground">Desde</label>
               <select
                 name="fromFund"
                 value={formData.fromFund}
@@ -93,7 +93,7 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Hacia</label>
+              <label className="text-sm font-medium text-foreground">Hacia</label>
               <select
                 name="toFund"
                 value={formData.toFund}
@@ -108,9 +108,9 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Monto</label>
+              <label className="text-sm font-medium text-foreground">Monto</label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="number"
                   name="amount"
@@ -124,9 +124,9 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Fecha</label>
+              <label className="text-sm font-medium text-foreground">Fecha</label>
               <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="date"
                   name="date"
@@ -140,9 +140,9 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-white/80">Descripción</label>
+            <label className="text-sm font-medium text-foreground">Descripción</label>
             <div className="relative">
-              <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-white/40" />
+              <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-muted" />
               <textarea
                 name="description"
                 className="input-premium pl-10 resize-none min-h-[70px]"
@@ -153,12 +153,12 @@ export function TransferModal({ isOpen, onClose, onSaved }: TransferModalProps) 
             </div>
           </div>
 
-          <p className="text-[11px] text-white/40">
+          <p className="text-[11px] text-muted">
             Genera un egreso en el fondo origen y un ingreso en el fondo destino. El saldo total
             del centro no cambia.
           </p>
 
-          <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
+          <div className="pt-4 border-t border-border flex justify-end gap-3">
             <button type="button" onClick={onClose} className="btn-secondary px-5 py-2">
               Cancelar
             </button>

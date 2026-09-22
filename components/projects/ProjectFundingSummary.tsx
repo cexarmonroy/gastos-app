@@ -31,18 +31,18 @@ export function ProjectFundingSummary({
     const barProgress = progress ?? 0;
     return (
       <div className={compact ? "mb-3" : "mb-4"}>
-        <div className="flex justify-between text-[10px] text-white/40 mb-1">
+        <div className="flex justify-between text-[10px] text-muted mb-1">
           <span>Asignado: {formatMoney(totalIncome)}</span>
           <span>Meta: {formatMoney(targetAmount)}</span>
         </div>
-        <div className={`${compact ? "h-2" : "h-3"} bg-white/10 rounded-full overflow-hidden`}>
+        <div className={`${compact ? "h-2" : "h-3"} bg-border rounded-full overflow-hidden`}>
           <div
             className="h-full bg-gradient-to-r from-accent to-primary rounded-full transition-all duration-500"
             style={{ width: `${barProgress}%` }}
           />
         </div>
         {!compact && (
-          <p className="text-white/30 text-[10px] mt-2">
+          <p className="text-muted text-[10px] mt-2">
             Avance de recaudación según ingresos vinculados al proyecto.
           </p>
         )}
@@ -53,18 +53,18 @@ export function ProjectFundingSummary({
   const barProgress = executionProgress ?? 0;
   return (
     <div className={compact ? "mb-3" : "mb-4"}>
-      <div className="flex justify-between text-[10px] text-white/40 mb-1">
+      <div className="flex justify-between text-[10px] text-muted mb-1">
         <span>Ejecutado: {formatMoney(totalExpense)}</span>
         <span>Presupuesto: {formatMoney(targetAmount)}</span>
       </div>
-      <div className={`${compact ? "h-2" : "h-3"} bg-white/10 rounded-full overflow-hidden`}>
+      <div className={`${compact ? "h-2" : "h-3"} bg-border rounded-full overflow-hidden`}>
         <div
           className="h-full bg-gradient-to-r from-danger/80 to-danger rounded-full transition-all duration-500"
           style={{ width: `${barProgress}%` }}
         />
       </div>
       {!compact && (
-        <p className="text-white/30 text-[10px] mt-2">
+        <p className="text-muted text-[10px] mt-2">
           Inversión pagada con saldo del Fondo de Ahorro; no requiere recaudación hacia la meta.
         </p>
       )}
@@ -77,7 +77,7 @@ export function ProjectFundingBadge({ fundingMode }: { fundingMode: ProjectFundi
   return (
     <span
       className={`text-[10px] uppercase tracking-wider ${
-        isFundraising ? "text-accent" : "text-white/40"
+        isFundraising ? "text-accent" : "text-muted"
       }`}
     >
       {PROJECT_FUNDING_MODE_LABELS[fundingMode]}

@@ -101,13 +101,13 @@ export function AttachmentPanel({ movementId }: AttachmentPanelProps) {
   };
 
   return (
-    <div className="border-t border-white/10 pt-4 mt-2 space-y-3">
+    <div className="border-t border-border pt-4 mt-2 space-y-3">
       <div className="flex items-center gap-2">
         <Paperclip className="w-4 h-4 text-accent" />
-        <h3 className="text-sm font-semibold text-white/90">Evidencias / adjuntos</h3>
+        <h3 className="text-sm font-semibold text-foreground">Evidencias / adjuntos</h3>
       </div>
 
-      <p className="text-[11px] text-white/40">
+      <p className="text-[11px] text-muted">
         Las evidencias son inmutables. Para corregir un archivo, sube una nueva versión.
       </p>
 
@@ -159,9 +159,9 @@ export function AttachmentPanel({ movementId }: AttachmentPanelProps) {
       )}
 
       {isLoading ? (
-        <p className="text-xs text-white/40">Cargando adjuntos...</p>
+        <p className="text-xs text-muted">Cargando adjuntos...</p>
       ) : attachments.length === 0 ? (
-        <p className="text-xs text-white/40">Sin evidencias adjuntas (boleta, factura, comprobante, etc.)</p>
+        <p className="text-xs text-muted">Sin evidencias adjuntas (boleta, factura, comprobante, etc.)</p>
       ) : (
         <div className="space-y-2">
           {attachments.map((item) => {
@@ -172,17 +172,17 @@ export function AttachmentPanel({ movementId }: AttachmentPanelProps) {
                 key={item.id}
                 className={`flex items-center justify-between gap-3 p-3 rounded-lg border ${
                   isLatest
-                    ? "bg-white/5 border-white/10"
-                    : "bg-black/20 border-white/5 opacity-70"
+                    ? "bg-surface-elevated border-border"
+                    : "bg-surface-elevated/60 border-border opacity-70"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm text-white/90 truncate" title={item.fileName}>
+                    <p className="text-sm text-foreground truncate" title={item.fileName}>
                       {item.fileName}
                     </p>
-                    <p className="text-[11px] text-white/40">
+                    <p className="text-[11px] text-muted">
                       {item.attachmentTypeLabel} · v{item.version} · {formatSize(item.fileSize)}
                       {isLatest && item.version > 1 && (
                         <span className="text-success ml-1">· actual</span>
@@ -196,7 +196,7 @@ export function AttachmentPanel({ movementId }: AttachmentPanelProps) {
                       type="button"
                       onClick={() => startUpload(item.id)}
                       disabled={isUploading}
-                      className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-accent"
+                      className="p-2 rounded-lg hover:bg-border/40 text-muted hover:text-accent"
                       title="Subir nueva versión"
                     >
                       <RefreshCw className="w-4 h-4" />
@@ -205,7 +205,7 @@ export function AttachmentPanel({ movementId }: AttachmentPanelProps) {
                   <button
                     type="button"
                     onClick={() => handleDownload(item.id)}
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
+                    className="p-2 rounded-lg hover:bg-border/40 text-muted hover:text-foreground"
                     title="Descargar"
                   >
                     <Download className="w-4 h-4" />

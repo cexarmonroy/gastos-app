@@ -73,18 +73,18 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="modal-panel">
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-bold">{isEditing ? "Editar Actividad" : "Nueva Actividad"}</h2>
-          <button onClick={onClose} className="p-2 rounded-full bg-white/5 hover:bg-white/10">
+          <button onClick={onClose} className="p-2 rounded-full bg-surface-elevated hover:bg-border/40">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-sm text-white/80">Nombre</label>
+            <label className="text-sm text-foreground">Nombre</label>
             <input
               name="name"
               required
@@ -97,9 +97,9 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm text-white/80">Fecha</label>
+              <label className="text-sm text-foreground">Fecha</label>
               <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="date"
                   required
@@ -110,9 +110,9 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm text-white/80">Meta recaudación</label>
+              <label className="text-sm text-foreground">Meta recaudación</label>
               <div className="relative">
-                <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="number"
                   min="0"
@@ -127,9 +127,9 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm text-white/80">Descripción</label>
+            <label className="text-sm text-foreground">Descripción</label>
             <div className="relative">
-              <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-white/40" />
+              <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-muted" />
               <textarea
                 className="input-premium pl-10 resize-none min-h-[70px]"
                 placeholder="Detalles de la actividad..."
@@ -139,7 +139,7 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <button type="button" onClick={onClose} className="btn-secondary px-5 py-2">
               Cancelar
             </button>

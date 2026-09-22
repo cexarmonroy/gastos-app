@@ -50,13 +50,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     "$" + n.toLocaleString("es-CL", { maximumFractionDigits: 0 });
 
   if (isLoading) {
-    return <div className="glass-panel p-12 text-center text-white/50">Cargando...</div>;
+    return <div className="glass-panel p-12 text-center text-muted">Cargando...</div>;
   }
 
   if (!project) {
     return (
       <div className="glass-panel p-12 text-center">
-        <p className="text-white/50 mb-4">Proyecto no encontrado</p>
+        <p className="text-muted mb-4">Proyecto no encontrado</p>
         <Link href="/projects" className="btn-secondary">
           Volver
         </Link>
@@ -68,7 +68,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     <div className="animate-in fade-in duration-500">
       <Link
         href="/projects"
-        className="inline-flex items-center gap-2 text-white/50 hover:text-white text-sm mb-4"
+        className="inline-flex items-center gap-2 text-muted hover:text-foreground text-sm mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
         Volver a proyectos
@@ -81,12 +81,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <span className="text-xs px-2 py-1 rounded-full bg-accent/20 text-accent border border-accent/30">
               {PROJECT_STATUS_LABELS[project.status]}
             </span>
-            <span className="text-xs px-2 py-1 rounded-full bg-white/5 text-white/60 border border-white/10">
+            <span className="text-xs px-2 py-1 rounded-full bg-surface-elevated text-muted border border-border">
               <ProjectFundingBadge fundingMode={project.fundingMode} />
             </span>
           </div>
           {project.description && (
-            <p className="text-white/60 text-sm">{project.description}</p>
+            <p className="text-muted text-sm">{project.description}</p>
           )}
         </div>
         {canManage && (
@@ -110,7 +110,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="glass-panel p-5 mb-6">
-        <p className="text-white/50 text-sm mb-1">
+        <p className="text-muted text-sm mb-1">
           {isFundraisingProject(project.fundingMode)
             ? "Avance hacia la meta"
             : "Ejecución del presupuesto"}
@@ -139,17 +139,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="glass-panel p-5">
           <TrendingUp className="w-5 h-5 text-success mb-2" />
-          <p className="text-white/50 text-sm">Fondos asignados</p>
+          <p className="text-muted text-sm">Fondos asignados</p>
           <p className="text-2xl font-bold text-success">{formatMoney(project.totalIncome)}</p>
         </div>
         <div className="glass-panel p-5">
           <TrendingDown className="w-5 h-5 text-danger mb-2" />
-          <p className="text-white/50 text-sm">Gastos del proyecto</p>
+          <p className="text-muted text-sm">Gastos del proyecto</p>
           <p className="text-2xl font-bold text-danger">{formatMoney(project.totalExpense)}</p>
         </div>
         <div className="glass-panel p-5">
           <Target className="w-5 h-5 text-primary mb-2" />
-          <p className="text-white/50 text-sm">Saldo disponible</p>
+          <p className="text-muted text-sm">Saldo disponible</p>
           <p className={`text-2xl font-bold ${project.balance >= 0 ? "text-success" : "text-danger"}`}>
             {formatMoney(project.balance)}
           </p>
@@ -157,12 +157,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="glass-panel overflow-hidden">
-        <div className="p-4 border-b border-white/10">
+        <div className="p-4 border-b border-border">
           <h3 className="font-semibold">Movimientos vinculados ({project.movements.length})</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-xs uppercase bg-[#0f1115] text-white/60">
+            <thead className="text-xs uppercase table-head text-muted">
               <tr>
                 <th className="px-4 py-3 text-left">Fecha</th>
                 <th className="px-4 py-3 text-left">Descripción</th>
@@ -170,10 +170,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <th className="px-4 py-3 text-right">Monto</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-border">
               {project.movements.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-10 text-white/40">
+                  <td colSpan={4} className="text-center py-10 text-muted">
                     {isFundraisingProject(project.fundingMode)
                       ? "Vincula ingresos del Fondo de Ahorro para avanzar hacia la meta."
                       : "Vincula egresos del Fondo de Ahorro para registrar la inversión."}
@@ -181,8 +181,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </tr>
               ) : (
                 project.movements.map((m) => (
-                  <tr key={m.id} className="hover:bg-white/5">
-                    <td className="px-4 py-3 text-white/70">
+                  <tr key={m.id} className="hover:bg-surface-elevated">
+                    <td className="px-4 py-3 text-muted">
                       {formatCalendarDate(m.date, "dd/MM/yyyy", { locale: es })}
                     </td>
                     <td className="px-4 py-3">{m.description || "—"}</td>

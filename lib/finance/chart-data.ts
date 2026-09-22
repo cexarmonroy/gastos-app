@@ -63,6 +63,49 @@ export function buildFlowChartData(
     .map(({ name, sortKey, ingresos, egresos }) => ({ name, sortKey, ingresos, egresos }));
 }
 
+export interface WeeklyFlowPoint {
+  name: string;
+  weekIndex: number;
+  total: number;
+}
+
+/** Agrupa movimientos (ya acotados a un mes) por semana calendario del mes, sumando volumen total (ingresos + egresos). */
+export function buildWeeklyFlowData(records: MovementRecord[]): WeeklyFlowPoint[] {
+  const weeks = new Map<number, number>();
+
+  for (const record of records) {
+    try {
+      const date = toCalendarDate(record.date);
+      const weekIndex = Math.ceil(date.getDate() / 7);
+      weeks.set(weekIndex, (weeks.get(weekIndex) ?? 0) + Math.abs(record.amount));
+    } catch {
+      // Ignorar fechas inválidas
+    }
+  }
+
+  return Array.from(weeks.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([weekIndex, total]) => ({
+      name: `Sem ${weekIndex}`,
+      weekIndex,
+      total,
+    }));
+}
+
+export function buildWeeklyInsight(
+  points: WeeklyFlowPoint[]
+): { weekLabel: string; percent: number } | null {
+  if (points.length < 2) return null;
+
+  const grandTotal = points.reduce((acc, p) => acc + p.total, 0);
+  if (grandTotal <= 0) return null;
+
+  const topWeek = points.reduce((best, current) => (current.total > best.total ? current : best));
+  const percent = Math.round((topWeek.total / grandTotal) * 100);
+
+  return { weekLabel: topWeek.name, percent };
+}
+
 export function buildBalanceChartData(records: MovementRecord[]): BalanceChartPoint[] {
   const sorted = [...records].sort(
     (a, b) => toCalendarDate(a.date).getTime() - toCalendarDate(b.date).getTime()

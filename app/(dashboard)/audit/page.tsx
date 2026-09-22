@@ -70,14 +70,14 @@ export default function AuditPage() {
           <Shield className="w-7 h-7 text-primary" />
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Auditoría</h1>
         </div>
-        <p className="text-white/60 text-sm md:text-base">
+        <p className="text-muted text-sm md:text-base">
           Historial completo de movimientos, adjuntos, reportes e importaciones.
         </p>
       </div>
 
       <div className="glass-panel p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="relative md:col-span-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -116,7 +116,7 @@ export default function AuditPage() {
           {Array.from(stats.entries()).map(([action, count]) => (
             <span
               key={action}
-              className="text-xs px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/60"
+              className="text-xs px-2 py-1 rounded-full bg-surface-elevated border border-border text-muted"
             >
               {AUDIT_ACTION_LABELS[action] ?? action}: {count}
             </span>
@@ -130,11 +130,11 @@ export default function AuditPage() {
 
       <div className="glass-panel overflow-hidden">
         {isLoading ? (
-          <p className="p-8 text-center text-white/50">Cargando auditoría...</p>
+          <p className="p-8 text-center text-muted">Cargando auditoría...</p>
         ) : logs.length === 0 ? (
-          <p className="p-8 text-center text-white/50">Sin registros con esos filtros</p>
+          <p className="p-8 text-center text-muted">Sin registros con esos filtros</p>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-border">
             {logs.map((log) => {
               const isExpanded = expandedId === log.id;
               const oldLines = auditSnapshotToLines(log.oldValues);
@@ -142,7 +142,7 @@ export default function AuditPage() {
               const metadataLines = auditSnapshotToLines(log.metadata);
 
               return (
-                <div key={log.id} className="p-4 hover:bg-white/5 transition-colors">
+                <div key={log.id} className="p-4 hover:bg-surface-elevated transition-colors">
                   <button
                     className="w-full flex items-start justify-between gap-4 text-left"
                     onClick={() => setExpandedId(isExpanded ? null : log.id)}
@@ -152,23 +152,23 @@ export default function AuditPage() {
                         <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/20 text-primary">
                           {AUDIT_ACTION_LABELS[log.action] ?? log.action}
                         </span>
-                        <span className="text-sm text-white/80">{formatAuditEntity(log.entity)}</span>
-                        <span className="text-xs text-white/30 font-mono truncate">{log.entityId.slice(0, 8)}…</span>
+                        <span className="text-sm text-foreground/80">{formatAuditEntity(log.entity)}</span>
+                        <span className="text-xs text-muted font-mono truncate">{log.entityId.slice(0, 8)}…</span>
                       </div>
-                      <p className="text-sm text-white/90 leading-snug mb-1">
+                      <p className="text-sm text-foreground leading-snug mb-1">
                         {formatAuditNarrative(log)}
                       </p>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-muted">
                         {log.userEmail} · {format(new Date(log.createdAt), "dd MMM yyyy HH:mm", { locale: es })}
                       </p>
                       {!isExpanded && newLines[0] && (
-                        <p className="text-xs text-white/30 mt-1 truncate">{newLines[0]}</p>
+                        <p className="text-xs text-muted mt-1 truncate">{newLines[0]}</p>
                       )}
                     </div>
                     {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-white/40 flex-shrink-0" />
+                      <ChevronUp className="w-4 h-4 text-muted flex-shrink-0" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-white/40 flex-shrink-0" />
+                      <ChevronDown className="w-4 h-4 text-muted flex-shrink-0" />
                     )}
                   </button>
 
@@ -176,8 +176,8 @@ export default function AuditPage() {
                     <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                       {oldLines.length > 0 && (
                         <div className="bg-black/30 rounded-lg p-3">
-                          <p className="text-white/40 mb-2 font-semibold">Antes</p>
-                          <ul className="space-y-1 text-white/60">
+                          <p className="text-muted mb-2 font-semibold">Antes</p>
+                          <ul className="space-y-1 text-muted">
                             {oldLines.map((line) => (
                               <li key={line}>{line}</li>
                             ))}
@@ -186,8 +186,8 @@ export default function AuditPage() {
                       )}
                       {newLines.length > 0 && (
                         <div className="bg-black/30 rounded-lg p-3">
-                          <p className="text-white/40 mb-2 font-semibold">Después</p>
-                          <ul className="space-y-1 text-white/70">
+                          <p className="text-muted mb-2 font-semibold">Después</p>
+                          <ul className="space-y-1 text-muted">
                             {newLines.map((line) => (
                               <li key={line}>{line}</li>
                             ))}
@@ -196,10 +196,10 @@ export default function AuditPage() {
                       )}
                       {metadataLines.length > 0 && (
                         <div className="bg-black/30 rounded-lg p-3 md:col-span-2">
-                          <p className="text-white/40 mb-2 font-semibold flex items-center gap-1">
+                          <p className="text-muted mb-2 font-semibold flex items-center gap-1">
                             <Filter className="w-3 h-3" /> Detalle
                           </p>
-                          <ul className="space-y-1 text-white/70">
+                          <ul className="space-y-1 text-muted">
                             {metadataLines.map((line) => (
                               <li key={line}>{line}</li>
                             ))}

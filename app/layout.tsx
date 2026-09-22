@@ -1,8 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-headline",
+});
 
 export const metadata: Metadata = {
   title: "Sistema de Gestión | Premium",
@@ -24,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${inter.className} ${plusJakartaSans.variable}`} suppressHydrationWarning>
         <AuthProvider>
           <main className="min-h-screen flex flex-col relative overflow-hidden">
             {children}

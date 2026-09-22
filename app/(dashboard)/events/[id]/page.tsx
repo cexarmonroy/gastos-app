@@ -52,13 +52,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     "$" + n.toLocaleString("es-CL", { maximumFractionDigits: 0 });
 
   if (isLoading) {
-    return <div className="glass-panel p-12 text-center text-white/50">Cargando...</div>;
+    return <div className="glass-panel p-12 text-center text-muted">Cargando...</div>;
   }
 
   if (!event) {
     return (
       <div className="glass-panel p-12 text-center">
-        <p className="text-white/50 mb-4">Actividad no encontrada</p>
+        <p className="text-muted mb-4">Actividad no encontrada</p>
         <Link href="/events" className="btn-secondary">
           Volver
         </Link>
@@ -70,7 +70,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     <div className="animate-in fade-in duration-500">
       <Link
         href="/events"
-        className="inline-flex items-center gap-2 text-white/50 hover:text-white text-sm mb-4"
+        className="inline-flex items-center gap-2 text-muted hover:text-foreground text-sm mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
         Volver a actividades
@@ -79,7 +79,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">{event.name}</h1>
-          <p className="text-white/60 text-sm">
+          <p className="text-muted text-sm">
             {formatCalendarDate(event.date, "dd MMMM yyyy", { locale: es })}
             {event.description ? ` · ${event.description}` : ""}
           </p>
@@ -107,24 +107,24 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="glass-panel p-5">
           <TrendingUp className="w-5 h-5 text-success mb-2" />
-          <p className="text-white/50 text-sm">Ingresos</p>
+          <p className="text-muted text-sm">Ingresos</p>
           <p className="text-2xl font-bold text-success">{formatMoney(event.totalIncome)}</p>
         </div>
         <div className="glass-panel p-5">
           <TrendingDown className="w-5 h-5 text-danger mb-2" />
-          <p className="text-white/50 text-sm">Gastos</p>
+          <p className="text-muted text-sm">Gastos</p>
           <p className="text-2xl font-bold text-danger">{formatMoney(event.totalExpense)}</p>
         </div>
         <div className="glass-panel p-5">
           <Target className="w-5 h-5 text-primary mb-2" />
-          <p className="text-white/50 text-sm">Ganancia neta</p>
+          <p className="text-muted text-sm">Ganancia neta</p>
           <p className={`text-2xl font-bold ${event.profit >= 0 ? "text-success" : "text-danger"}`}>
             {formatMoney(event.profit)}
           </p>
         </div>
         {event.goal != null && (
           <div className="glass-panel p-5">
-            <p className="text-white/50 text-sm mb-1">Meta de recaudación</p>
+            <p className="text-muted text-sm mb-1">Meta de recaudación</p>
             <p className="text-2xl font-bold">{formatMoney(event.goal)}</p>
             {event.goalProgress != null && (
               <p className="text-accent text-sm mt-1">{event.goalProgress}% alcanzado</p>
@@ -134,12 +134,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <div className="glass-panel overflow-hidden">
-        <div className="p-4 border-b border-white/10">
+        <div className="p-4 border-b border-border">
           <h3 className="font-semibold">Movimientos vinculados ({event.movements.length})</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-xs uppercase bg-[#0f1115] text-white/60">
+            <thead className="text-xs uppercase table-head text-muted">
               <tr>
                 <th className="px-4 py-3 text-left">Fecha</th>
                 <th className="px-4 py-3 text-left">Descripción</th>
@@ -148,21 +148,21 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 <th className="px-4 py-3 text-right">Monto</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-border">
               {event.movements.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-white/40">
+                  <td colSpan={5} className="text-center py-10 text-muted">
                     Sin movimientos. Agrega ingresos y gastos de esta actividad.
                   </td>
                 </tr>
               ) : (
                 event.movements.map((m) => (
-                  <tr key={m.id} className="hover:bg-white/5">
-                    <td className="px-4 py-3 whitespace-nowrap text-white/70">
+                  <tr key={m.id} className="hover:bg-surface-elevated">
+                    <td className="px-4 py-3 whitespace-nowrap text-muted">
                       {formatCalendarDate(m.date, "dd/MM/yyyy")}
                     </td>
                     <td className="px-4 py-3">{m.description || "—"}</td>
-                    <td className="px-4 py-3 text-white/60">{m.categoryName ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted">{m.categoryName ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${

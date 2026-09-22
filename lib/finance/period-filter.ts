@@ -1,4 +1,4 @@
-import { endOfMonth, endOfYear, format, startOfMonth, startOfYear } from "date-fns";
+import { endOfMonth, endOfYear, format, startOfMonth, startOfYear, subMonths, subYears } from "date-fns";
 import { es } from "date-fns/locale";
 import { toCalendarDate } from "@/lib/date-only";
 import type { MovementRecord } from "./types";
@@ -16,6 +16,19 @@ export function getPeriodBounds(
   const end = period === "month" ? endOfMonth(referenceDate) : endOfYear(referenceDate);
 
   return { start, end };
+}
+
+/** Límites del período inmediatamente anterior (mes o año previo). `null` para "all" — no hay período previo con el que comparar. */
+export function getPreviousPeriodBounds(
+  period: DashboardPeriod,
+  referenceDate = new Date()
+): { start: Date; end: Date } | null {
+  if (period === "all") return null;
+
+  const previousReference =
+    period === "month" ? subMonths(referenceDate, 1) : subYears(referenceDate, 1);
+
+  return getPeriodBounds(period, previousReference);
 }
 
 export function filterRecordsByPeriod(

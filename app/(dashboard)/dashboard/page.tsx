@@ -11,15 +11,24 @@ import {
   RefreshCw,
   Info,
   HardHat,
-  PartyPopper,
+  Flag,
+  Receipt,
+  ArrowRight,
 } from "lucide-react";
-import { fetchMovementsData, fetchRecentMovements, getFundBalances } from "@/app/actions/movements";
+import {
+  fetchMovementsData,
+  fetchRecentMovements,
+  getFundBalances,
+  getFundBalancesAsOf,
+} from "@/app/actions/movements";
 import { fetchProjects } from "@/app/actions/projects";
 import { fetchEvents } from "@/app/actions/events";
 import { buildCategoryBreakdown } from "@/lib/finance/category-breakdown";
 import {
   buildBalanceChartData,
   buildFlowChartData,
+  buildWeeklyFlowData,
+  buildWeeklyInsight,
 } from "@/lib/finance/chart-data";
 import {
   getMovementDisplayLabel,
@@ -28,10 +37,13 @@ import {
 import {
   getPeriodBounds,
   getPeriodLabel,
+  getPreviousPeriodBounds,
   sumExpense,
   sumIncome,
   type DashboardPeriod,
 } from "@/lib/finance/period-filter";
+import { computeMetric } from "@/lib/finance/period-comparison";
+import { computeActivityRoi } from "@/lib/finance/report-period-comparison";
 import type { EventSummary, MovementRecord, ProjectSummary } from "@/lib/finance/types";
 import {
   ResponsiveContainer,
@@ -43,21 +55,22 @@ import {
   Tooltip,
   LineChart,
   Line,
+  BarChart,
+  Bar,
 } from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatCalendarDate } from "@/lib/date-only";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
-import { RecentActivityPanel } from "@/components/dashboard/RecentActivityPanel";
+import { DashboardMovementsTable } from "@/components/dashboard/DashboardMovementsTable";
 
 type ChartMode = "flow" | "balance";
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
   const [periodRecords, setPeriodRecords] = useState<MovementRecord[]>([]);
   const [recentMovements, setRecentMovements] = useState<MovementRecord[]>([]);
   const [fundBalances, setFundBalances] = useState({ caja_chica: 0, fondo_ahorro: 0 });
+  const [previousSaldoTotal, setPreviousSaldoTotal] = useState<number | null>(null);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [period, setPeriod] = useState<DashboardPeriod>("month");
@@ -78,12 +91,14 @@ export default function DashboardPage() {
       setError(null);
 
       const bounds = getPeriodBounds(period);
-      const [movements, recent, balances, projectList, eventList] = await Promise.all([
+      const previousBounds = getPreviousPeriodBounds(period);
+      const [movements, recent, balances, previousBalances, projectList, eventList] = await Promise.all([
         fetchMovementsData(
           bounds ? { dateFrom: bounds.start.toISOString(), dateTo: bounds.end.toISOString() } : undefined
         ),
         fetchRecentMovements(6),
         getFundBalances(),
+        previousBounds ? getFundBalancesAsOf(previousBounds.end.toISOString()) : Promise.resolve(null),
         fetchProjects(),
         fetchEvents(),
       ]);
@@ -91,6 +106,9 @@ export default function DashboardPage() {
       setPeriodRecords(movements);
       setRecentMovements(recent);
       setFundBalances(balances);
+      setPreviousSaldoTotal(
+        previousBalances ? previousBalances.caja_chica + previousBalances.fondo_ahorro : null
+      );
       setProjects(projectList);
       setEvents(eventList);
       setLastUpdate(new Date());
@@ -152,6 +170,17 @@ export default function DashboardPage() {
     [balanceHistory]
   );
 
+  const weeklyFlowData = useMemo(
+    () => (period === "month" ? buildWeeklyFlowData(periodRecords) : []),
+    [periodRecords, period]
+  );
+  const weeklyInsight = useMemo(() => buildWeeklyInsight(weeklyFlowData), [weeklyFlowData]);
+
+  const saldoComparison = useMemo(() => {
+    if (previousSaldoTotal === null) return null;
+    return computeMetric(saldoTotal, previousSaldoTotal, true);
+  }, [saldoTotal, previousSaldoTotal]);
+
   const priorityProject = useMemo(() => {
     const fundraising = projects.filter((p) => p.fundingMode === "FUNDRAISING");
     const active = fundraising.filter((p) => p.status === "IN_PROGRESS");
@@ -170,11 +199,23 @@ export default function DashboardPage() {
     );
   }, [events]);
 
+  const latestEventRoi = useMemo(
+    () => (latestEvent ? computeActivityRoi(latestEvent.profit, latestEvent.totalExpense) : null),
+    [latestEvent]
+  );
+
   const formatM = (val: number) =>
     "$" + val.toLocaleString("es-CL", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-  const isAdminOrDirectiva =
-    session?.user?.role === "ADMIN" || session?.user?.role === "DIRECTIVA";
+  const showWeeklyBreakdown = !isLoading && period === "month" && weeklyFlowData.length > 0;
+  const showLatestEvent = !isLoading && !!latestEvent;
+
+  const saldoSubtitle =
+    saldoComparison && saldoComparison.hasPreviousData && saldoComparison.deltaPercent !== null
+      ? `${saldoComparison.deltaPercent > 0 ? "+" : ""}${saldoComparison.deltaPercent}% vs ${
+          period === "year" ? "año anterior" : "mes anterior"
+        }`
+      : undefined;
 
   const positionStats = [
     {
@@ -183,6 +224,10 @@ export default function DashboardPage() {
       icon: <Wallet className="w-6 h-6 text-primary" />,
       trend: "Posición actual",
       hint: "Suma de Caja Chica y Fondo de Ahorro",
+      subtitle: saldoSubtitle,
+      subtitleClass:
+        saldoComparison?.direction === "down" ? "text-danger" : "text-success",
+      accentClass: "bg-primary",
     },
     {
       title: "Caja Chica",
@@ -190,6 +235,9 @@ export default function DashboardPage() {
       icon: <Briefcase className="w-6 h-6 text-success" />,
       trend: "Posición actual",
       hint: "Saldo acumulado en Caja Chica",
+      subtitle: undefined as string | undefined,
+      subtitleClass: "",
+      accentClass: "bg-accent",
     },
     {
       title: "Fondo de Ahorro",
@@ -197,6 +245,9 @@ export default function DashboardPage() {
       icon: <PiggyBank className="w-6 h-6 text-accent" />,
       trend: "Posición actual",
       hint: "Saldo acumulado en Fondo de Ahorro",
+      subtitle: undefined as string | undefined,
+      subtitleClass: "",
+      accentClass: "bg-warning",
     },
   ];
 
@@ -234,11 +285,11 @@ export default function DashboardPage() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
             Tesorería Centro de Padres
           </h1>
-          <p className="text-white/60 text-sm md:text-base">
+          <p className="text-muted text-sm md:text-base">
             Posición actual de fondos y resultado del período seleccionado
           </p>
           {lastUpdate && (
-            <p className="text-white/40 text-xs md:text-sm mt-1">
+            <p className="text-muted text-xs md:text-sm mt-1">
               Última actualización: {format(lastUpdate, "dd/MM/yyyy HH:mm", { locale: es })}
             </p>
           )}
@@ -271,7 +322,7 @@ export default function DashboardPage() {
 
       {/* Posición actual */}
       <div className="mb-2">
-        <p className="text-white/40 text-xs font-medium uppercase tracking-wider">
+        <p className="text-muted text-xs font-medium uppercase tracking-wider">
           Posición actual
         </p>
       </div>
@@ -279,23 +330,27 @@ export default function DashboardPage() {
         {positionStats.map((stat) => (
           <div
             key={stat.title}
-            className="glass-panel p-4 md:p-6 flex flex-col hover:-translate-y-1 transition-transform duration-300 relative group"
+            className="glass-panel p-4 md:p-6 flex flex-col hover:-translate-y-1 transition-transform duration-300 relative group overflow-hidden"
             title={stat.hint}
           >
+            <div className={`absolute top-0 left-0 right-0 h-1.5 ${stat.accentClass}`} />
             <div className="flex items-start justify-between mb-3 md:mb-4">
-              <div className="p-2 md:p-3 bg-white/5 rounded-xl border border-white/10">
+              <div className="p-2 md:p-3 bg-surface-elevated rounded-xl border border-border">
                 <div className="w-5 h-5 md:w-6 md:h-6">{stat.icon}</div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-[10px] md:text-xs font-medium bg-white/5 text-white/60">
+                <div className="px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-[10px] md:text-xs font-medium bg-surface-elevated text-muted">
                   {stat.trend}
                 </div>
-                <Info className="w-3 h-3 md:w-4 md:h-4 text-white/30 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
+                <Info className="w-3 h-3 md:w-4 md:h-4 text-muted opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
               </div>
             </div>
             <div>
-              <p className="text-white/50 text-xs md:text-sm font-medium mb-1">{stat.title}</p>
+              <p className="text-muted text-xs md:text-sm font-medium mb-1">{stat.title}</p>
               <h3 className="text-xl md:text-2xl font-bold break-words">{stat.amount}</h3>
+              {stat.subtitle && (
+                <p className={`text-xs mt-1 font-medium ${stat.subtitleClass}`}>{stat.subtitle}</p>
+              )}
             </div>
           </div>
         ))}
@@ -303,7 +358,7 @@ export default function DashboardPage() {
 
       {/* Resultado del período */}
       <div className="mb-2">
-        <p className="text-white/40 text-xs font-medium uppercase tracking-wider">
+        <p className="text-muted text-xs font-medium uppercase tracking-wider">
           Resultado del período — {periodLabel}
         </p>
       </div>
@@ -315,33 +370,145 @@ export default function DashboardPage() {
                 <div className="w-5 h-5 md:w-6 md:h-6">{stat.icon}</div>
               </div>
             </div>
-            <p className="text-white/50 text-xs md:text-sm font-medium mb-1">{stat.title}</p>
+            <p className="text-muted text-xs md:text-sm font-medium mb-1">{stat.title}</p>
             <h3 className={`text-xl md:text-2xl font-bold break-words ${stat.amountClass}`}>
               {stat.amount}
             </h3>
             {stat.subtitle && (
-              <p className="text-white/40 text-xs mt-1">{stat.subtitle}</p>
+              <p className="text-muted text-xs mt-1">{stat.subtitle}</p>
             )}
           </div>
         ))}
       </div>
+
+      {/* Desglose semanal + Actividad Emblemática, lado a lado como en la maqueta */}
+      {(showWeeklyBreakdown || showLatestEvent) && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 mb-6 md:mb-8">
+          {showWeeklyBreakdown && (
+        <div className={`glass-panel p-4 md:p-6 ${showLatestEvent ? "lg:col-span-7" : "lg:col-span-12"}`}>
+          <p className="text-muted text-xs font-semibold uppercase tracking-wider mb-1">
+            Desglose Semanal
+          </p>
+          <h3 className="text-lg font-semibold mb-4">Flujo de Movimientos ({periodLabel})</h3>
+          <div className="h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyFlowData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" vertical={false} />
+                <XAxis dataKey="name" stroke="rgba(15,23,42,0.35)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis
+                  stroke="rgba(15,23,42,0.35)"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `$${value >= 1000 ? (value / 1000).toFixed(0) + "k" : value}`}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0", borderRadius: "12px", color: "#0f172a" }}
+                  formatter={(value: any) => [`$${Number(value).toLocaleString("es-CL")}`, "Volumen"]}
+                />
+                <Bar dataKey="total" name="Volumen" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {weeklyInsight && (
+            <p className="text-muted text-xs mt-3 flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 text-primary shrink-0" />
+              {weeklyInsight.weekLabel} concentró el {weeklyInsight.percent}% del volumen transaccional del período.
+            </p>
+          )}
+            </div>
+          )}
+          {showLatestEvent && latestEvent && (
+            <div className={`glass-panel p-4 md:p-6 flex flex-col ${showWeeklyBreakdown ? "lg:col-span-5" : "lg:col-span-12"}`}>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary/10 text-primary text-xs font-bold">
+                  <Flag className="w-3.5 h-3.5" />
+                  Actividad Emblemática
+                </span>
+                <span className="text-muted text-xs font-medium">
+                  {formatCalendarDate(latestEvent.date, "dd 'de' MMMM", { locale: es })}
+                </span>
+              </div>
+
+              <h3 className="text-xl font-bold text-primary mb-1">{latestEvent.name}</h3>
+              {latestEvent.description && (
+                <p className="text-muted text-sm mb-4 line-clamp-2">{latestEvent.description}</p>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="bg-success/10 rounded-xl p-3">
+                  <p className="text-muted text-xs font-medium mb-1">Recaudación Bruta</p>
+                  <p className="text-lg font-bold text-success font-mono break-words">
+                    {formatM(latestEvent.totalIncome)}
+                  </p>
+                </div>
+                <div className="bg-danger/10 rounded-xl p-3">
+                  <p className="text-muted text-xs font-medium mb-1">Costos Directos</p>
+                  <p className="text-lg font-bold text-danger font-mono break-words">
+                    -{formatM(latestEvent.totalExpense)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-surface-elevated rounded-xl p-3 flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <PiggyBank className="w-5 h-5 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted text-xs font-medium">Ganancia Neta</p>
+                    <p
+                      className={`font-bold font-mono truncate ${
+                        latestEvent.profit >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {formatM(latestEvent.profit)}
+                    </p>
+                  </div>
+                </div>
+                {latestEventRoi !== null && (
+                  <span
+                    className={`text-xs font-bold whitespace-nowrap ${
+                      latestEventRoi >= 0 ? "text-success" : "text-danger"
+                    }`}
+                  >
+                    Margen {latestEventRoi}%
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-auto flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-muted text-xs flex items-center gap-1.5">
+                  <Receipt className="w-3.5 h-3.5" />
+                  {latestEvent.movementCount} movimientos registrados
+                </span>
+                <Link
+                  href={`/events/${latestEvent.id}`}
+                  className="btn-secondary text-xs md:text-sm px-3 md:px-4 py-2 flex items-center gap-1.5"
+                >
+                  Ver Rendición Detallada
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Top categorías del período */}
       {!isLoading && periodRecords.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="glass-panel p-4 md:p-6">
             <h3 className="text-lg font-semibold mb-1">Top Ingresos por Categoría</h3>
-            <p className="text-white/40 text-xs mb-4">{periodLabel}</p>
+            <p className="text-muted text-xs mb-4">{periodLabel}</p>
             <div className="space-y-3">
               {incomeBreakdown.length === 0 ? (
-                <p className="text-white/40 text-sm">Sin datos en este período</p>
+                <p className="text-muted text-sm">Sin datos en este período</p>
               ) : (
                 incomeBreakdown.map((item) => (
                   <div
                     key={item.categoryId ?? item.categoryName}
                     className="flex justify-between items-center text-sm"
                   >
-                    <span className="text-white/70">{item.categoryName}</span>
+                    <span className="text-foreground/80">{item.categoryName}</span>
                     <span className="text-success font-semibold font-mono">
                       ${item.total.toLocaleString("es-CL")}
                     </span>
@@ -352,17 +519,17 @@ export default function DashboardPage() {
           </div>
           <div className="glass-panel p-4 md:p-6">
             <h3 className="text-lg font-semibold mb-1">Top Gastos por Categoría</h3>
-            <p className="text-white/40 text-xs mb-4">{periodLabel}</p>
+            <p className="text-muted text-xs mb-4">{periodLabel}</p>
             <div className="space-y-3">
               {expenseBreakdown.length === 0 ? (
-                <p className="text-white/40 text-sm">Sin datos en este período</p>
+                <p className="text-muted text-sm">Sin datos en este período</p>
               ) : (
                 expenseBreakdown.map((item) => (
                   <div
                     key={item.categoryId ?? item.categoryName}
                     className="flex justify-between items-center text-sm"
                   >
-                    <span className="text-white/70">{item.categoryName}</span>
+                    <span className="text-foreground/80">{item.categoryName}</span>
                     <span className="text-danger font-semibold font-mono">
                       ${item.total.toLocaleString("es-CL")}
                     </span>
@@ -374,105 +541,53 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Widgets Proyecto + Actividad */}
-      {!isLoading && (priorityProject || latestEvent) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-          {priorityProject && (
-            <div className="glass-panel p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <HardHat className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Proyecto Prioritario</h3>
-              </div>
-              <p className="text-xl font-bold mb-1">{priorityProject.name}</p>
-              <p className="text-white/50 text-sm mb-4">
-                {priorityProject.fundingMode === "EXECUTION" ? "Presupuesto" : "Meta"}:{" "}
-                {formatM(priorityProject.targetAmount)}
-              </p>
-              <div className="mb-2 flex justify-between text-sm">
-                <span className="text-white/60">
-                  {priorityProject.fundingMode === "EXECUTION" ? "Ejecutado" : "Avance"}
-                </span>
-                <span className="font-semibold">
-                  {priorityProject.fundingMode === "EXECUTION"
-                    ? `${priorityProject.executionProgress ?? 0}%`
-                    : `${priorityProject.progress ?? 0}%`}
-                </span>
-              </div>
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-3">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    priorityProject.fundingMode === "EXECUTION" ? "bg-danger" : "bg-primary"
-                  }`}
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      priorityProject.fundingMode === "EXECUTION"
-                        ? (priorityProject.executionProgress ?? 0)
-                        : (priorityProject.progress ?? 0)
-                    )}%`,
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-white/60">
-                  {priorityProject.fundingMode === "EXECUTION"
-                    ? `Gastado: ${formatM(priorityProject.totalExpense)}`
-                    : `Actual: ${formatM(priorityProject.totalIncome)}`}
-                </span>
-                <Link href={`/projects/${priorityProject.id}`} className="text-primary hover:underline">
-                  Ver proyecto →
-                </Link>
-              </div>
-            </div>
-          )}
-          {latestEvent && (
-            <div className="glass-panel p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <PartyPopper className="w-5 h-5 text-accent" />
-                <h3 className="text-lg font-semibold">Última Actividad</h3>
-              </div>
-              <p className="text-xl font-bold mb-1">{latestEvent.name}</p>
-              <p className="text-white/50 text-sm mb-4">
-                {formatCalendarDate(latestEvent.date, "dd MMMM yyyy", { locale: es })}
-              </p>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-white/60">Ingresos</span>
-                  <span className="text-success font-semibold font-mono">
-                    {formatM(latestEvent.totalIncome)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60">Gastos</span>
-                  <span className="text-danger font-semibold font-mono">
-                    {formatM(latestEvent.totalExpense)}
-                  </span>
-                </div>
-                <div className="flex justify-between border-t border-white/10 pt-2">
-                  <span className="text-white/60 font-medium">Ganancia</span>
-                  <span
-                    className={`font-bold font-mono ${
-                      latestEvent.profit >= 0 ? "text-success" : "text-danger"
-                    }`}
-                  >
-                    {formatM(latestEvent.profit)}
-                  </span>
-                </div>
-              </div>
-              <Link
-                href={`/events/${latestEvent.id}`}
-                className="text-primary text-sm mt-4 inline-block hover:underline"
-              >
-                Ver actividad →
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
-
-      {isAdminOrDirectiva && (
-        <div className="mb-6 md:mb-8">
-          <RecentActivityPanel />
+      {/* Proyecto Prioritario */}
+      {!isLoading && priorityProject && (
+        <div className="glass-panel p-4 md:p-6 mb-6 md:mb-8 max-w-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <HardHat className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold">Proyecto Prioritario</h3>
+          </div>
+          <p className="text-xl font-bold mb-1">{priorityProject.name}</p>
+          <p className="text-muted text-sm mb-4">
+            {priorityProject.fundingMode === "EXECUTION" ? "Presupuesto" : "Meta"}:{" "}
+            {formatM(priorityProject.targetAmount)}
+          </p>
+          <div className="mb-2 flex justify-between text-sm">
+            <span className="text-muted">
+              {priorityProject.fundingMode === "EXECUTION" ? "Ejecutado" : "Avance"}
+            </span>
+            <span className="font-semibold">
+              {priorityProject.fundingMode === "EXECUTION"
+                ? `${priorityProject.executionProgress ?? 0}%`
+                : `${priorityProject.progress ?? 0}%`}
+            </span>
+          </div>
+          <div className="w-full h-2 bg-border rounded-full overflow-hidden mb-3">
+            <div
+              className={`h-full rounded-full transition-all ${
+                priorityProject.fundingMode === "EXECUTION" ? "bg-danger" : "bg-primary"
+              }`}
+              style={{
+                width: `${Math.min(
+                  100,
+                  priorityProject.fundingMode === "EXECUTION"
+                    ? (priorityProject.executionProgress ?? 0)
+                    : (priorityProject.progress ?? 0)
+                )}%`,
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted">
+              {priorityProject.fundingMode === "EXECUTION"
+                ? `Gastado: ${formatM(priorityProject.totalExpense)}`
+                : `Actual: ${formatM(priorityProject.totalIncome)}`}
+            </span>
+            <Link href={`/projects/${priorityProject.id}`} className="text-primary hover:underline">
+              Ver proyecto →
+            </Link>
+          </div>
         </div>
       )}
 
@@ -484,7 +599,7 @@ export default function DashboardPage() {
               <h3 className="text-lg md:text-xl font-semibold">
                 {chartMode === "flow" ? "Ingresos vs Gastos" : "Evolución del Saldo"}
               </h3>
-              <p className="text-white/40 text-xs mt-0.5">
+              <p className="text-muted text-xs mt-0.5">
                 {chartMode === "flow" ? periodLabel : "Histórico completo"}
               </p>
             </div>
@@ -500,7 +615,7 @@ export default function DashboardPage() {
           <div className="flex-1 w-full relative min-h-[250px] md:min-h-[300px]">
             {isLoading || (chartMode === "balance" && isLoadingBalanceHistory) ? (
               <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-white/50 animate-pulse">Cargando gráfico...</p>
+                <p className="text-muted animate-pulse">Cargando gráfico...</p>
               </div>
             ) : chartMode === "flow" && flowChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -517,19 +632,19 @@ export default function DashboardPage() {
                   </defs>
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.05)"
+                    stroke="rgba(15,23,42,0.08)"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="name"
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(15,23,42,0.35)"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
                     dy={10}
                   />
                   <YAxis
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(15,23,42,0.35)"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
@@ -539,12 +654,12 @@ export default function DashboardPage() {
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1a1d2d",
-                      borderColor: "rgba(255,255,255,0.1)",
+                      backgroundColor: "#ffffff",
+                      borderColor: "#e2e8f0",
                       borderRadius: "12px",
-                      color: "#fff",
+                      color: "#0f172a",
                     }}
-                    itemStyle={{ color: "#fff" }}
+                    itemStyle={{ color: "#0f172a" }}
                     formatter={(value: any) => [`$${Number(value).toLocaleString("es-CL")}`, undefined]}
                   />
                   <Area
@@ -572,19 +687,19 @@ export default function DashboardPage() {
                 <LineChart data={balanceChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.05)"
+                    stroke="rgba(15,23,42,0.08)"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="name"
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(15,23,42,0.35)"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
                     dy={10}
                   />
                   <YAxis
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(15,23,42,0.35)"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
@@ -594,10 +709,10 @@ export default function DashboardPage() {
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1a1d2d",
-                      borderColor: "rgba(255,255,255,0.1)",
+                      backgroundColor: "#ffffff",
+                      borderColor: "#e2e8f0",
                       borderRadius: "12px",
-                      color: "#fff",
+                      color: "#0f172a",
                     }}
                     formatter={(value: any) => [
                       `$${Number(value).toLocaleString("es-CL")}`,
@@ -616,7 +731,7 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-white/40">No hay datos suficientes para el gráfico</p>
+                <p className="text-muted">No hay datos suficientes para el gráfico</p>
               </div>
             )}
           </div>
@@ -626,7 +741,7 @@ export default function DashboardPage() {
           <h3 className="text-lg md:text-xl font-semibold mb-4 md:mb-6">Actividad Reciente</h3>
           <div className="flex-1 flex flex-col gap-3 md:gap-4 mb-4 overflow-y-auto pr-2 custom-scrollbar">
             {isLoading ? (
-              <p className="text-white/40 text-sm text-center my-auto animate-pulse">Cargando...</p>
+              <p className="text-muted text-sm text-center my-auto animate-pulse">Cargando...</p>
             ) : recentMovements.length > 0 ? (
               recentMovements.map((record) => {
                 const label = getMovementDisplayLabel(record);
@@ -634,7 +749,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={record.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5"
+                    className="flex items-center justify-between p-3 rounded-xl bg-surface-elevated hover:bg-border/40 transition-colors border border-border"
                   >
                     <div className="flex items-center gap-3 overflow-hidden min-w-0">
                       <div
@@ -651,10 +766,10 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <div className="overflow-hidden min-w-0">
-                        <p className="text-sm font-medium text-white truncate" title={label}>
+                        <p className="text-sm font-medium text-foreground truncate" title={label}>
                           {label}
                         </p>
-                        <p className="text-xs text-white/50 truncate">
+                        <p className="text-xs text-muted truncate">
                           {subtitle
                             ? `${subtitle} · `
                             : ""}
@@ -666,7 +781,7 @@ export default function DashboardPage() {
                     </div>
                     <div
                       className={`font-semibold text-sm flex-shrink-0 ml-2 ${
-                        record.type === "Ingreso" ? "text-success" : "text-white"
+                        record.type === "Ingreso" ? "text-success" : "text-foreground"
                       }`}
                     >
                       {record.type === "Ingreso" ? "+" : "-"}$
@@ -676,13 +791,18 @@ export default function DashboardPage() {
                 );
               })
             ) : (
-              <p className="text-white/40 text-sm text-center my-auto">Sin registros recientes</p>
+              <p className="text-muted text-sm text-center my-auto">Sin registros recientes</p>
             )}
           </div>
           <Link href="/records" className="btn-secondary w-full text-center">
             Ver todos los registros
           </Link>
         </div>
+      </div>
+
+      {/* Registro de movimientos, filtrable y paginado */}
+      <div className="mt-6 md:mt-8">
+        <DashboardMovementsTable />
       </div>
     </div>
   );

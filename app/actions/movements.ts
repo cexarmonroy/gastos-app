@@ -161,26 +161,52 @@ async function getOrganizationId() {
   return organization.id;
 }
 
-export async function fetchMovementsData(params?: {
+export interface MovementFilterParams {
   dateFrom?: string;
   dateTo?: string;
-}): Promise<MovementRecord[]> {
+  fundTab?: FundTab;
+  type?: "Ingreso" | "Egreso";
+  categoryId?: string;
+  eventId?: string;
+  search?: string;
+}
+
+async function buildMovementWhere(
+  organizationId: string,
+  params?: MovementFilterParams
+): Promise<Prisma.MovementWhereInput> {
+  return {
+    organizationId,
+    deletedAt: null,
+    ...(params?.dateFrom || params?.dateTo
+      ? {
+          date: {
+            ...(params.dateFrom ? { gte: new Date(params.dateFrom) } : {}),
+            ...(params.dateTo ? { lte: new Date(params.dateTo) } : {}),
+          },
+        }
+      : {}),
+    ...(params?.fundTab ? { fund: { code: TAB_TO_FUND_CODE[params.fundTab] } } : {}),
+    ...(params?.type
+      ? { movementType: params.type === "Ingreso" ? MovementType.INCOME : MovementType.EXPENSE }
+      : {}),
+    ...(params?.categoryId ? { categoryId: params.categoryId } : {}),
+    ...(params?.eventId ? { eventId: params.eventId } : {}),
+    ...(params?.search
+      ? { description: { contains: params.search, mode: "insensitive" as const } }
+      : {}),
+  };
+}
+
+export async function fetchMovementsData(
+  params?: MovementFilterParams & { take?: number; skip?: number }
+): Promise<MovementRecord[]> {
   await assertAuthenticated();
   const organizationId = await getOrganizationId();
+  const where = await buildMovementWhere(organizationId, params);
 
   const movements = await prisma.movement.findMany({
-    where: {
-      organizationId,
-      deletedAt: null,
-      ...(params?.dateFrom || params?.dateTo
-        ? {
-            date: {
-              ...(params.dateFrom ? { gte: new Date(params.dateFrom) } : {}),
-              ...(params.dateTo ? { lte: new Date(params.dateTo) } : {}),
-            },
-          }
-        : {}),
-    },
+    where,
     include: {
       fund: true,
       category: true,
@@ -188,9 +214,20 @@ export async function fetchMovementsData(params?: {
       project: true,
     },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    ...(params?.take !== undefined ? { take: params.take } : {}),
+    ...(params?.skip !== undefined ? { skip: params.skip } : {}),
   });
 
   return movements.map(toMovementRecord);
+}
+
+/** Total de movimientos que matchean los mismos filtros que fetchMovementsData, sin traerlos — usado para paginación ("Mostrando X de Y"). */
+export async function countMovements(params?: MovementFilterParams): Promise<number> {
+  await assertAuthenticated();
+  const organizationId = await getOrganizationId();
+  const where = await buildMovementWhere(organizationId, params);
+
+  return prisma.movement.count({ where });
 }
 
 /** Los N movimientos más recientes, sin importar el período mostrado en el dashboard. */
@@ -229,6 +266,36 @@ export async function getFundBalances(): Promise<Record<FundTab, number>> {
     prisma.movement.groupBy({
       by: ["fundId", "movementType"],
       where: { organizationId, deletedAt: null },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const balances: Record<FundTab, number> = { caja_chica: 0, fondo_ahorro: 0 };
+
+  for (const fund of funds) {
+    const tab = (FUND_CODE_TO_TAB[fund.code] ?? "caja_chica") as FundTab;
+    const income = sums
+      .find((s) => s.fundId === fund.id && s.movementType === MovementType.INCOME)
+      ?._sum.amount?.toNumber();
+    const expense = sums
+      .find((s) => s.fundId === fund.id && s.movementType === MovementType.EXPENSE)
+      ?._sum.amount?.toNumber();
+    balances[tab] = (income ?? 0) - (expense ?? 0);
+  }
+
+  return balances;
+}
+
+/** Igual que getFundBalances pero acotado a movimientos hasta (inclusive) una fecha dada — para comparaciones "saldo a fin del período anterior". */
+export async function getFundBalancesAsOf(asOfDate: string): Promise<Record<FundTab, number>> {
+  await assertAuthenticated();
+  const organizationId = await getOrganizationId();
+
+  const [funds, sums] = await Promise.all([
+    prisma.fund.findMany({ where: { organizationId, active: true } }),
+    prisma.movement.groupBy({
+      by: ["fundId", "movementType"],
+      where: { organizationId, deletedAt: null, date: { lte: new Date(asOfDate) } },
       _sum: { amount: true },
     }),
   ]);

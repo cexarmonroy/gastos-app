@@ -38,7 +38,7 @@ export default function EventsPage() {
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Actividades</h1>
-          <p className="text-white/60 text-sm md:text-base">
+          <p className="text-muted text-sm md:text-base">
             Bingos, rifas, kermeses y otras recaudaciones con KPIs propios.
           </p>
         </div>
@@ -54,11 +54,11 @@ export default function EventsPage() {
       </div>
 
       {isLoading ? (
-        <div className="glass-panel p-12 text-center text-white/50">Cargando actividades...</div>
+        <div className="glass-panel p-12 text-center text-muted">Cargando actividades...</div>
       ) : events.length === 0 ? (
         <div className="glass-panel p-16 text-center">
-          <PartyPopper className="w-12 h-12 mx-auto mb-4 text-white/20" />
-          <p className="text-white/50 mb-4">No hay actividades registradas</p>
+          <PartyPopper className="w-12 h-12 mx-auto mb-4 text-muted" />
+          <p className="text-muted mb-4">No hay actividades registradas</p>
           {canManage && (
             <button onClick={() => setIsModalOpen(true)} className="btn-primary">
               Crear primera actividad
@@ -78,7 +78,7 @@ export default function EventsPage() {
                   <h3 className="font-bold text-lg group-hover:text-primary transition-colors">
                     {event.name}
                   </h3>
-                  <p className="text-white/50 text-xs">
+                  <p className="text-muted text-xs">
                     {formatCalendarDate(event.date, "dd MMMM yyyy", { locale: es })}
                   </p>
                 </div>
@@ -91,11 +91,11 @@ export default function EventsPage() {
 
               {event.goal != null && event.goalProgress != null && (
                 <div className="mb-4">
-                  <div className="flex justify-between text-[10px] text-white/40 mb-1">
+                  <div className="flex justify-between text-[10px] text-muted mb-1">
                     <span>Meta: {formatMoney(event.goal)}</span>
                     <span>{formatMoney(event.totalIncome)} recaudado</span>
                   </div>
-                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-border rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all"
                       style={{ width: `${event.goalProgress}%` }}
@@ -107,24 +107,24 @@ export default function EventsPage() {
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 <div className="bg-success/10 rounded-lg p-2 border border-success/20">
                   <TrendingUp className="w-3 h-3 text-success mx-auto mb-1" />
-                  <p className="text-white/50">Ingresos</p>
+                  <p className="text-muted">Ingresos</p>
                   <p className="font-bold text-success font-mono">{formatMoney(event.totalIncome)}</p>
                 </div>
                 <div className="bg-danger/10 rounded-lg p-2 border border-danger/20">
                   <TrendingDown className="w-3 h-3 text-danger mx-auto mb-1" />
-                  <p className="text-white/50">Gastos</p>
+                  <p className="text-muted">Gastos</p>
                   <p className="font-bold text-danger font-mono">{formatMoney(event.totalExpense)}</p>
                 </div>
                 <div className="bg-primary/10 rounded-lg p-2 border border-primary/20">
                   <Target className="w-3 h-3 text-primary mx-auto mb-1" />
-                  <p className="text-white/50">Ganancia</p>
+                  <p className="text-muted">Ganancia</p>
                   <p className={`font-bold font-mono ${event.profit >= 0 ? "text-success" : "text-danger"}`}>
                     {formatMoney(event.profit)}
                   </p>
                 </div>
               </div>
 
-              <p className="text-white/30 text-[10px] mt-3">{event.movementCount} movimientos vinculados</p>
+              <p className="text-muted text-[10px] mt-3">{event.movementCount} movimientos vinculados</p>
             </Link>
           ))}
         </div>

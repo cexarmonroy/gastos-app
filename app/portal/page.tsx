@@ -11,10 +11,10 @@ export const metadata = {
 export default async function PublicPortalPage() {
   if (!isPublicPortalEnabled()) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0b0d17] text-white p-6">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-6">
         <div className="glass-panel p-8 max-w-md text-center">
           <h1 className="text-xl font-bold mb-2">Portal no disponible</h1>
-          <p className="text-white/60 text-sm mb-4">
+          <p className="text-muted text-sm mb-4">
             El portal público está desactivado. Contacta a la tesorería para más información.
           </p>
           <Link href="/" className="btn-primary inline-block">
@@ -32,10 +32,10 @@ export default async function PublicPortalPage() {
 
   if (!summary) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0b0d17] text-white p-6">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-6">
         <div className="glass-panel p-8 max-w-md text-center">
           <h1 className="text-xl font-bold mb-2">Sin datos públicos</h1>
-          <p className="text-white/60 text-sm">No hay información de tesorería disponible.</p>
+          <p className="text-muted text-sm">No hay información de tesorería disponible.</p>
         </div>
       </div>
     );

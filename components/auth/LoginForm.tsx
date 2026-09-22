@@ -40,18 +40,14 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      
-      {/* Background decorations */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/20 rounded-full blur-[120px] pointer-events-none -translate-x-1/2 translate-y-1/2" />
 
       <div className="w-full max-w-md z-10 animate-in fade-in zoom-in-95 duration-500">
-        
+
         <div className="text-center mb-8">
-          <div className="inline-block text-2xl font-bold tracking-tight mb-2 text-white">
+          <div className="inline-block text-2xl font-bold tracking-tight mb-2 text-foreground">
             Tesorería<span className="text-gradient">CGPA</span>
           </div>
-          <p className="text-white/50">Panel del Centro General de Padres</p>
+          <p className="text-muted">Panel del Centro General de Padres</p>
         </div>
 
         <div className="glass-panel p-8">
@@ -65,9 +61,9 @@ export default function LoginForm() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">Correo Electrónico</label>
+              <label className="text-sm font-medium text-foreground">Correo Electrónico</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="email"
                   value={email}
@@ -81,11 +77,11 @@ export default function LoginForm() {
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-medium text-white/80">Contraseña</label>
+                <label className="text-sm font-medium text-foreground">Contraseña</label>
                 <a href="#" className="text-xs text-primary hover:text-primary-hover transition-colors">¿Olvidaste tu contraseña?</a>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="password"
                   value={password}
@@ -115,16 +111,16 @@ export default function LoginForm() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
+              <div className="w-full border-t border-border"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#0f1115]/50 backdrop-blur-xl px-2 text-white/40">O continuar con</span>
+              <span className="bg-surface px-2 text-muted">O continuar con</span>
             </div>
           </div>
 
           <button
             onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-            className="w-full h-11 bg-white hover:bg-white/90 text-black font-semibold rounded-lg flex items-center justify-center gap-3 transition-all duration-300"
+            className="w-full h-11 bg-white hover:bg-surface-elevated text-black font-semibold rounded-lg border border-border flex items-center justify-center gap-3 transition-all duration-300"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -147,8 +143,8 @@ export default function LoginForm() {
             Google
           </button>
           
-          <div className="mt-6 pt-6 border-t border-white/10 text-center text-sm text-white/50">
-            ¿No tienes cuenta? <a href="#" className="text-white hover:text-primary transition-colors font-medium">Contacta al administrador</a>
+          <div className="mt-6 pt-6 border-t border-border text-center text-sm text-muted">
+            ¿No tienes cuenta? <a href="#" className="text-foreground hover:text-primary transition-colors font-medium">Contacta al administrador</a>
           </div>
         </div>
         
