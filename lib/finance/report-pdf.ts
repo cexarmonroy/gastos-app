@@ -8,7 +8,7 @@ import type { AssemblyReportSnapshot } from "./assembly-report";
 import type { FundBalanceSnapshot } from "./report-fund-balance";
 import { kpisFromMovementRecords } from "./event-stats";
 import type { MovementRecord } from "./types";
-import { toPdfSafeText } from "@/lib/pdf-utils";
+import { REPORT_FONT, registerReportFont } from "@/lib/pdf-utils";
 
 type ReportTotals = {
   totalIngresos: number;
@@ -55,23 +55,23 @@ async function addLogo(doc: jsPDF): Promise<number> {
 }
 
 function addSummarySection(doc: jsPDF, yPosition: number, totals: ReportTotals): number {
-  doc.setFont("helvetica", "bold");
-  doc.text("Resumen del periodo (sin transferencias)", 14, yPosition);
+  doc.setFont(REPORT_FONT, "bold");
+  doc.text("Resumen del período (sin transferencias)", 14, yPosition);
   yPosition += 8;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
   doc.text(`Total Ingresos: $${totals.totalIngresos.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 7;
   doc.text(`Total Egresos: $${totals.totalEgresos.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 7;
-  doc.setFont("helvetica", "bold");
-  doc.text(`Resultado del periodo: $${totals.resultado.toLocaleString("es-CL")}`, 20, yPosition);
+  doc.setFont(REPORT_FONT, "bold");
+  doc.text(`Resultado del período: $${totals.resultado.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 7;
 
   if (totals.transferCount > 0) {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(REPORT_FONT, "normal");
     doc.setFontSize(9);
     doc.text(
-      `Transferencias internas: ${totals.transferCount} operacion(es) (${totals.transferMovementCount} movimientos), excluidas del resultado.`,
+      `Transferencias internas: ${totals.transferCount} operación(es) (${totals.transferMovementCount} movimientos), excluidas del resultado.`,
       20,
       yPosition
     );
@@ -89,12 +89,12 @@ function addEventGoalSection(
   yPosition: number,
   eventGoal: NonNullable<StandardReportPdfContext["eventGoal"]>
 ): number {
-  doc.setFont("helvetica", "bold");
+  doc.setFont(REPORT_FONT, "bold");
   doc.text("Actividad seleccionada", 14, yPosition);
   yPosition += 8;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
   doc.setFontSize(9);
-  doc.text(`Nombre: ${toPdfSafeText(eventGoal.name)}`, 20, yPosition);
+  doc.text(`Nombre: ${eventGoal.name}`, 20, yPosition);
   yPosition += 6;
   if (eventGoal.goal != null) {
     doc.text(`Meta: $${eventGoal.goal.toLocaleString("es-CL")}`, 20, yPosition);
@@ -108,29 +108,29 @@ function addEventGoalSection(
   yPosition += 6;
   doc.text(`Gastos: $${eventGoal.totalExpense.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 6;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(REPORT_FONT, "bold");
   doc.text(`Ganancia: $${eventGoal.profit.toLocaleString("es-CL")}`, 20, yPosition);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
   doc.setFontSize(10);
   return yPosition + 10;
 }
 
 function addFundBalanceSection(doc: jsPDF, yPosition: number, snapshot: FundBalanceSnapshot): number {
-  doc.setFont("helvetica", "bold");
-  doc.text("Posicion del fondo en el periodo", 14, yPosition);
+  doc.setFont(REPORT_FONT, "bold");
+  doc.text("Posición del fondo en el período", 14, yPosition);
   yPosition += 8;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
   doc.setFontSize(9);
-  doc.text(`Fondo: ${toPdfSafeText(snapshot.fundLabel)}`, 20, yPosition);
+  doc.text(`Fondo: ${snapshot.fundLabel}`, 20, yPosition);
   yPosition += 6;
   doc.text(`Saldo inicial: $${snapshot.saldoInicial.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 6;
   doc.text(`Saldo final: $${snapshot.saldoFinal.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 6;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(REPORT_FONT, "bold");
   doc.text(`Cambio de saldo: $${snapshot.cambioSaldo.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 6;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
 
   if (snapshot.cajaChica && snapshot.fondoAhorro) {
     doc.text(
@@ -159,21 +159,21 @@ function addCategoryTable(
 ): number {
   if (items.length === 0) return yPosition;
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(REPORT_FONT, "bold");
   doc.text(title, 14, yPosition);
 
   autoTable(doc, {
-    head: [["Categoria", "Tipo", "Movimientos", "Total"]],
+    head: [["Categoría", "Tipo", "Movimientos", "Total"]],
     body: items.map((item) => [
-      toPdfSafeText(item.categoryName),
-      toPdfSafeText(item.type),
+      item.categoryName,
+      item.type,
       item.count.toString(),
       `$${item.total.toLocaleString("es-CL")}`,
     ]),
     startY: yPosition + 4,
     theme: "grid",
-    headStyles: { fillColor: [99, 102, 241] },
-    styles: { fontSize: 8 },
+    headStyles: { font: REPORT_FONT, fillColor: [99, 102, 241] },
+    styles: { font: REPORT_FONT, fontSize: 8 },
   });
 
   return getTableEndY(doc) + 10;
@@ -187,23 +187,23 @@ function addDetailTables(doc: jsPDF, yPosition: number, totals: ReportTotals): n
   ) => {
     if (rows.length === 0) return;
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont(REPORT_FONT, "bold");
     doc.text(title, 14, yPosition);
 
     autoTable(doc, {
-      head: [["Fecha", "Descripcion", "Categoria", "Actividad", "Tipo", "Monto"]],
+      head: [["Fecha", "Descripción", "Categoría", "Actividad", "Tipo", "Monto"]],
       body: rows.map((record) => [
         formatCalendarDate(record.date, "dd/MM/yyyy", { locale: es }),
-        toPdfSafeText(record.description, "Sin descripcion"),
-        toPdfSafeText(record.categoryName, "-"),
-        toPdfSafeText(record.eventName, "-"),
-        toPdfSafeText(typeLabel(record)),
+        record.description || "Sin descripción",
+        record.categoryName || "-",
+        record.eventName || "-",
+        typeLabel(record),
         `$${Math.abs(record.amount).toLocaleString("es-CL")}`,
       ]),
       startY: yPosition + 4,
       theme: "grid",
-      headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255] },
-      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { font: REPORT_FONT, fillColor: [99, 102, 241], textColor: [255, 255, 255] },
+      styles: { font: REPORT_FONT, fontSize: 7, cellPadding: 2 },
     });
 
     yPosition = getTableEndY(doc) + 10;
@@ -227,42 +227,43 @@ export interface ActivityReportPdfContext {
 
 export async function generateActivityReportPdf(context: ActivityReportPdfContext): Promise<jsPDF> {
   const doc = new jsPDF();
+  registerReportFont(doc);
   let yPosition = await addLogo(doc);
 
   doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(REPORT_FONT, "bold");
   doc.text("Reporte de Actividad", 40, yPosition);
   yPosition += 8;
 
   doc.setFontSize(12);
-  doc.text(toPdfSafeText(context.activityName), 40, yPosition);
+  doc.text(context.activityName, 40, yPosition);
   yPosition += 7;
 
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Periodo: ${toPdfSafeText(context.periodLabel)}`, 40, yPosition);
+  doc.setFont(REPORT_FONT, "normal");
+  doc.text(`Periodo: ${context.periodLabel}`, 40, yPosition);
   yPosition += 5;
 
   if (context.fundLabel) {
-    doc.text(`Fondo: ${toPdfSafeText(context.fundLabel)}`, 40, yPosition);
+    doc.text(`Fondo: ${context.fundLabel}`, 40, yPosition);
     yPosition += 5;
   }
 
   doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}`, 40, yPosition);
   yPosition += 12;
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(REPORT_FONT, "bold");
   doc.text("Resultado de la actividad", 14, yPosition);
   yPosition += 8;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
   doc.text(`Ingresos: $${context.eventGoal.totalIncome.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 6;
   doc.text(`Gastos: $${context.eventGoal.totalExpense.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 6;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(REPORT_FONT, "bold");
   doc.text(`Ganancia: $${context.eventGoal.profit.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 6;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
   if (context.roiPercent != null) {
     doc.text(`ROI (ganancia / gastos): ${context.roiPercent}%`, 20, yPosition);
     yPosition += 6;
@@ -276,10 +277,10 @@ export async function generateActivityReportPdf(context: ActivityReportPdfContex
   yPosition = addEventGoalSection(doc, yPosition, context.eventGoal);
 
   if (context.reportTotals.transferCount > 0) {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(REPORT_FONT, "normal");
     doc.setFontSize(9);
     doc.text(
-      `Transferencias internas: ${context.reportTotals.transferCount} operacion(es), excluidas del resultado.`,
+      `Transferencias internas: ${context.reportTotals.transferCount} operación(es), excluidas del resultado.`,
       20,
       yPosition
     );
@@ -287,7 +288,7 @@ export async function generateActivityReportPdf(context: ActivityReportPdfContex
     yPosition += 10;
   }
 
-  yPosition = addCategoryTable(doc, yPosition, "Desglose por Categoria", context.categoryBreakdown);
+  yPosition = addCategoryTable(doc, yPosition, "Desglose por Categoría", context.categoryBreakdown);
   addDetailTables(doc, yPosition, context.reportTotals);
 
   return doc;
@@ -295,32 +296,33 @@ export async function generateActivityReportPdf(context: ActivityReportPdfContex
 
 export async function generateStandardReportPdf(context: StandardReportPdfContext): Promise<jsPDF> {
   const doc = new jsPDF();
+  registerReportFont(doc);
   let yPosition = await addLogo(doc);
 
   doc.setFontSize(22);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(REPORT_FONT, "bold");
   doc.text("Reporte Financiero", 40, yPosition);
   yPosition += 8;
 
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Periodo: ${toPdfSafeText(context.periodLabel)}`, 40, yPosition);
+  doc.setFont(REPORT_FONT, "normal");
+  doc.text(`Periodo: ${context.periodLabel}`, 40, yPosition);
   yPosition += 5;
 
   if (context.fundLabel) {
-    doc.text(`Fondo: ${toPdfSafeText(context.fundLabel)}`, 40, yPosition);
+    doc.text(`Fondo: ${context.fundLabel}`, 40, yPosition);
     yPosition += 5;
   }
   if (context.categoryLabel) {
-    doc.text(`Categoria: ${toPdfSafeText(context.categoryLabel)}`, 40, yPosition);
+    doc.text(`Categoría: ${context.categoryLabel}`, 40, yPosition);
     yPosition += 5;
   }
   if (context.eventLabel) {
-    doc.text(`Actividad: ${toPdfSafeText(context.eventLabel)}`, 40, yPosition);
+    doc.text(`Actividad: ${context.eventLabel}`, 40, yPosition);
     yPosition += 5;
   }
   if (context.projectLabel) {
-    doc.text(`Proyecto: ${toPdfSafeText(context.projectLabel)}`, 40, yPosition);
+    doc.text(`Proyecto: ${context.projectLabel}`, 40, yPosition);
     yPosition += 5;
   }
 
@@ -337,7 +339,7 @@ export async function generateStandardReportPdf(context: StandardReportPdfContex
     yPosition = addEventGoalSection(doc, yPosition, context.eventGoal);
   }
 
-  yPosition = addCategoryTable(doc, yPosition, "Desglose por Categoria", context.categoryBreakdown);
+  yPosition = addCategoryTable(doc, yPosition, "Desglose por Categoría", context.categoryBreakdown);
   addDetailTables(doc, yPosition, context.reportTotals);
 
   return doc;
@@ -345,25 +347,26 @@ export async function generateStandardReportPdf(context: StandardReportPdfContex
 
 export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot): Promise<jsPDF> {
   const doc = new jsPDF();
+  registerReportFont(doc);
   let yPosition = await addLogo(doc);
 
   doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
-  doc.text("Rendicion de Cuentas CGPA", 40, yPosition);
+  doc.setFont(REPORT_FONT, "bold");
+  doc.text("Rendición de Cuentas CGPA", 40, yPosition);
   yPosition += 7;
   doc.setFontSize(12);
-  doc.text(`Asamblea - Periodo ${snapshot.year}`, 40, yPosition);
+  doc.text(`Asamblea - Año ${snapshot.year}`, 40, yPosition);
   yPosition += 10;
 
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
   doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}`, 40, yPosition);
   yPosition += 12;
 
-  doc.setFont("helvetica", "bold");
-  doc.text("Posicion de tesoreria", 14, yPosition);
+  doc.setFont(REPORT_FONT, "bold");
+  doc.text("Posición de tesorería", 14, yPosition);
   yPosition += 8;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(REPORT_FONT, "normal");
   doc.text(`Saldo total: $${snapshot.saldoTotal.toLocaleString("es-CL")}`, 20, yPosition);
   yPosition += 6;
   doc.text(`Caja Chica: $${snapshot.saldoCajaChica.toLocaleString("es-CL")}`, 20, yPosition);
@@ -374,12 +377,12 @@ export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot
   yPosition = addSummarySection(doc, yPosition, snapshot.periodTotals);
 
   if (snapshot.events.length > 0) {
-    doc.setFont("helvetica", "bold");
-    doc.text("Actividades del periodo", 14, yPosition);
+    doc.setFont(REPORT_FONT, "bold");
+    doc.text("Actividades del año", 14, yPosition);
     autoTable(doc, {
       head: [["Actividad", "Meta", "Ingresos", "Gastos", "Ganancia", "Avance"]],
       body: snapshot.events.map((event) => [
-        toPdfSafeText(event.name),
+        event.name,
         event.goal != null ? `$${event.goal.toLocaleString("es-CL")}` : "-",
         `$${event.totalIncome.toLocaleString("es-CL")}`,
         `$${event.totalExpense.toLocaleString("es-CL")}`,
@@ -388,20 +391,20 @@ export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot
       ]),
       startY: yPosition + 4,
       theme: "grid",
-      headStyles: { fillColor: [99, 102, 241] },
-      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { font: REPORT_FONT, fillColor: [99, 102, 241] },
+      styles: { font: REPORT_FONT, fontSize: 7, cellPadding: 2 },
     });
     yPosition = getTableEndY(doc) + 10;
   }
 
   if (snapshot.projects.length > 0) {
-    doc.setFont("helvetica", "bold");
-    doc.text("Proyectos del periodo", 14, yPosition);
+    doc.setFont(REPORT_FONT, "bold");
+    doc.text("Proyectos del año", 14, yPosition);
     autoTable(doc, {
-      head: [["Proyecto", "Tipo", "Meta/Presup.", "Monto periodo", "Indicador"]],
+      head: [["Proyecto", "Tipo", "Meta/Presup.", "Monto año", "Indicador"]],
       body: snapshot.projects.map((project) => [
-        toPdfSafeText(project.name),
-        project.fundingMode === "EXECUTION" ? "Ejecucion" : "Recaudacion",
+        project.name,
+        project.fundingMode === "EXECUTION" ? "Ejecución" : "Recaudación",
         `$${project.targetAmount.toLocaleString("es-CL")}`,
         `$${(project.fundingMode === "EXECUTION"
           ? project.totalExpense
@@ -413,14 +416,14 @@ export async function generateAssemblyReportPdf(snapshot: AssemblyReportSnapshot
       ]),
       startY: yPosition + 4,
       theme: "grid",
-      headStyles: { fillColor: [99, 102, 241] },
-      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { font: REPORT_FONT, fillColor: [99, 102, 241] },
+      styles: { font: REPORT_FONT, fontSize: 7, cellPadding: 2 },
     });
     yPosition = getTableEndY(doc) + 10;
   }
 
-  yPosition = addCategoryTable(doc, yPosition, "Top gastos del periodo", snapshot.topExpenses);
-  addCategoryTable(doc, yPosition, "Top ingresos del periodo", snapshot.topIncomes);
+  yPosition = addCategoryTable(doc, yPosition, "Top gastos del año", snapshot.topExpenses);
+  addCategoryTable(doc, yPosition, "Top ingresos del año", snapshot.topIncomes);
 
   return doc;
 }

@@ -42,7 +42,7 @@ import {
 } from "@/lib/finance/categorization-quality";
 import { getCategorySuggestion } from "@/lib/finance/category-suggestion";
 import type { CategoryOption, EventOption, MovementRecord } from "@/lib/finance/types";
-import { getBase64ImageFromUrl, toPdfSafeText } from "@/lib/pdf-utils";
+import { getBase64ImageFromUrl, registerReportFont, REPORT_FONT } from "@/lib/pdf-utils";
 
 type SortField = "date" | "description" | "type" | "amount";
 type SortDirection = "asc" | "desc";
@@ -113,9 +113,10 @@ export default function RecordsPage() {
 
   const handleExportPDF = async () => {
     const doc = new jsPDF();
+    registerReportFont(doc);
     const filteredRecords = records.filter(r => r.category === activeTab);
     const title = activeTab === "caja_chica" ? "Reporte de Caja Chica" : "Reporte de Fondo de Ahorro";
-    
+
     try {
       const logoBase64 = await getBase64ImageFromUrl("/logo-cgpa.png");
       doc.addImage(logoBase64, "PNG", 14, 10, 20, 20);
@@ -123,20 +124,20 @@ export default function RecordsPage() {
       console.error("Could not load logo for PDF", error);
     }
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont(REPORT_FONT, "bold");
     doc.setFontSize(18);
     doc.text(title, 40, 22);
-    
+
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(REPORT_FONT, "normal");
     doc.text(`Generado el: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 40, 28);
-    
-    const tableColumn = ["Fecha", "Descripcion", "Categoria", "Tipo", "Monto"];
+
+    const tableColumn = ["Fecha", "Descripción", "Categoría", "Tipo", "Monto"];
     const tableRows = filteredRecords.map(r => [
       format(r.date, "dd/MM/yyyy"),
-      toPdfSafeText(r.description, "Sin descripcion"),
-      toPdfSafeText(r.categoryName, "Sin categoria"),
-      toPdfSafeText(r.type),
+      r.description || "Sin descripción",
+      r.categoryName || "Sin categoría",
+      r.type,
       `$${Math.abs(r.amount).toLocaleString('es-CL')}`,
     ]);
 
@@ -145,7 +146,8 @@ export default function RecordsPage() {
       body: tableRows,
       startY: 35,
       theme: 'grid',
-      headStyles: { fillColor: [99, 102, 241] },
+      headStyles: { font: REPORT_FONT, fillColor: [99, 102, 241] },
+      styles: { font: REPORT_FONT },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 3) {
           const type = data.cell.raw as string;

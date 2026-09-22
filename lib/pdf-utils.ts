@@ -1,17 +1,23 @@
-/**
- * Normaliza texto para jsPDF (Helvetica solo soporta Latin-1 básico).
- * Evita caracteres corruptos como &P&r&eacute;... con tildes, flechas, etc.
- */
-export function toPdfSafeText(text: string | null | undefined, fallback = ""): string {
-  if (text == null || text === "") return fallback;
+import type jsPDF from "jspdf";
+import { NOTO_SANS_REGULAR_BASE64 } from "@/lib/finance/fonts/noto-sans-regular";
 
-  return text
-    .replace(/→/g, "->")
-    .replace(/[–—]/g, "-")
-    .replace(/…/g, "...")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\x20-\x7E]/g, "");
+/** Font name to use with `doc.setFont(REPORT_FONT, ...)` after calling `registerReportFont`. */
+export const REPORT_FONT = "NotoSans";
+
+/**
+ * Embeds a Unicode TTF font so jsPDF reports can render Spanish accents and ñ.
+ * The 3 standard PDF fonts (Helvetica/Times/Courier) require manual glyph
+ * workarounds for anything outside a narrow character set, which is why
+ * PDF exports used to strip diacritics before this was added.
+ */
+export function registerReportFont(doc: jsPDF): void {
+  doc.addFileToVFS("NotoSans-Regular.ttf", NOTO_SANS_REGULAR_BASE64);
+  doc.addFont("NotoSans-Regular.ttf", REPORT_FONT, "normal");
+  // No bold weight is embedded; alias it to the regular glyphs so
+  // setFont(REPORT_FONT, "bold") still resolves instead of falling back
+  // to Helvetica (which loses accents/ñ).
+  doc.addFont("NotoSans-Regular.ttf", REPORT_FONT, "bold");
+  doc.setFont(REPORT_FONT, "normal");
 }
 
 /**
@@ -21,7 +27,7 @@ export function toPdfSafeText(text: string | null | undefined, fallback = ""): s
 export const getBase64ImageFromUrl = async (imageUrl: string): Promise<string> => {
   const res = await fetch(imageUrl);
   const blob = await res.blob();
-  
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.addEventListener("load", () => resolve(reader.result as string));
