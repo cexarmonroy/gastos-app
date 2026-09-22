@@ -93,7 +93,10 @@ async function resolveCategoryIdForMovement(
   categoryId: string | null | undefined,
   eventId: string | null
 ) {
-  if (eventId) {
+  // El default por actividad solo aplica cuando el usuario no eligió categoría
+  // explícitamente — de lo contrario, guardar un movimiento ya categorizado
+  // (ej. al editarlo) lo revertía silenciosamente a COMPLETADA/EVENTOS.
+  if (eventId && !categoryId) {
     const code = getDefaultCategoryCodeForEventMovement(movementType);
     const eventCategory = await prisma.category.findUnique({
       where: {
