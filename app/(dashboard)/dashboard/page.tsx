@@ -62,7 +62,6 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatCalendarDate } from "@/lib/date-only";
 import Link from "next/link";
-import { DashboardMovementsTable } from "@/components/dashboard/DashboardMovementsTable";
 
 type ChartMode = "flow" | "balance";
 
@@ -854,10 +853,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Registro de movimientos, filtrable y paginado */}
-      <div className="mt-6 md:mt-8">
-        <DashboardMovementsTable />
-      </div>
     </div>
   );
 }
