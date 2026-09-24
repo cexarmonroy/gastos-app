@@ -179,6 +179,10 @@ function addCategoryTable(
   return getTableEndY(doc) + 10;
 }
 
+function fundLabel(tab: MovementRecord["category"]): string {
+  return tab === "caja_chica" ? "Caja Chica" : "Fondo de Ahorro";
+}
+
 function addDetailTables(doc: jsPDF, yPosition: number, totals: ReportTotals): number {
   const addTable = (
     title: string,
@@ -209,8 +213,24 @@ function addDetailTables(doc: jsPDF, yPosition: number, totals: ReportTotals): n
     yPosition = getTableEndY(doc) + 10;
   };
 
-  addTable("Detalle de movimientos", totals.operational, (record) => record.type);
-  addTable("Transferencias internas", totals.transfers, () => "Transferencia");
+  // Tabla separada por fondo: mezclar Caja Chica y Fondo de Ahorro en una sola
+  // grilla generaba confusión sobre a qué fondo correspondía cada movimiento.
+  const addTablesByFund = (
+    baseTitle: string,
+    rows: MovementRecord[],
+    typeLabel: (record: MovementRecord) => string
+  ) => {
+    (["caja_chica", "fondo_ahorro"] as const).forEach((fund) => {
+      addTable(
+        `${baseTitle}: ${fundLabel(fund)}`,
+        rows.filter((record) => record.category === fund),
+        typeLabel
+      );
+    });
+  };
+
+  addTablesByFund("Detalle de movimientos", totals.operational, (record) => record.type);
+  addTablesByFund("Transferencias internas", totals.transfers, () => "Transferencia");
   return yPosition;
 }
 
