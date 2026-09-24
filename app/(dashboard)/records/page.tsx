@@ -25,6 +25,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toCalendarDate } from "@/lib/date-only";
 import { RecordModal } from "@/components/ui/RecordModal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -44,6 +46,7 @@ import {
 import { getCategorySuggestion } from "@/lib/finance/category-suggestion";
 import type { CategoryOption, EventOption, MovementRecord } from "@/lib/finance/types";
 import { getBase64ImageFromUrl, registerReportFont, REPORT_FONT } from "@/lib/pdf-utils";
+import { formatCLP } from "@/lib/format";
 
 type SortField = "date" | "description" | "type" | "amount";
 type SortDirection = "asc" | "desc";
@@ -93,6 +96,7 @@ function RecordsPageContent() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkCategoryId, setBulkCategoryId] = useState("");
   const [isBulkApplying, setIsBulkApplying] = useState(false);
+  const [voidTarget, setVoidTarget] = useState<MovementRecord | null>(null);
 
   const isAdminOrDirectiva = session?.user?.role === "ADMIN" || session?.user?.role === "DIRECTIVA";
   const tableColSpan = isAdminOrDirectiva ? 9 : 7;
@@ -165,7 +169,7 @@ function RecordsPageContent() {
       r.description || "Sin descripción",
       r.categoryName || "Sin categoría",
       r.type,
-      `$${Math.abs(r.amount).toLocaleString('es-CL')}`,
+      formatCLP(Math.abs(r.amount)),
     ]);
 
     autoTable(doc, {
@@ -237,11 +241,16 @@ function RecordsPageContent() {
     });
   };
 
-  const handleVoid = async (record: MovementRecord) => {
-    if (!confirm(`¿Anular el movimiento "${record.description}"?`)) return;
-    const result = await voidMovement(record.id);
-    if (result.success) loadRecords();
-    else alert(result.error);
+  const handleVoid = async () => {
+    if (!voidTarget) return;
+    const result = await voidMovement(voidTarget.id);
+    if (result.success) {
+      loadRecords();
+      toast.success("Movimiento anulado");
+      setVoidTarget(null);
+    } else {
+      toast.error(result.error);
+    }
   };
 
   const handleApplySuggestion = async (
@@ -265,7 +274,7 @@ function RecordsPageContent() {
         )
       );
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
     setApplyingId(null);
   };
@@ -388,8 +397,9 @@ function RecordsPageContent() {
       });
       setSelectedIds(new Set());
       setBulkCategoryId("");
+      toast.success("Categoría actualizada");
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
     setIsBulkApplying(false);
   };
@@ -417,7 +427,7 @@ function RecordsPageContent() {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col md:h-full md:min-h-0">
+    <div className="flex flex-col md:h-full md:min-h-0">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 md:mb-6">
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Gestión de Registros</h1>
@@ -454,14 +464,14 @@ function RecordsPageContent() {
                 >
                   <button
                     onClick={() => openCreate("Ingreso")}
-                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-surface-elevated flex items-center gap-2 text-success"
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-surface-elevated flex items-center gap-2 text-income"
                   >
                     <ArrowUpRight className="w-4 h-4" />
                     Nuevo ingreso
                   </button>
                   <button
                     onClick={() => openCreate("Egreso")}
-                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-surface-elevated flex items-center gap-2 text-danger"
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-surface-elevated flex items-center gap-2 text-expense"
                   >
                     <ArrowDownRight className="w-4 h-4" />
                     Nuevo gasto
@@ -482,10 +492,10 @@ function RecordsPageContent() {
 
       {/* Pendientes de revisión */}
       {!isLoading && categorization.poorQualityCount > 0 && (
-        <div className="glass-panel p-4 md:p-5 mb-6 border border-accent/20 bg-accent/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="glass-panel p-4 md:p-5 mb-6 border border-info/20 bg-info/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-accent/10 border border-accent/20 flex-shrink-0">
-              <ClipboardList className="w-5 h-5 text-accent" />
+            <div className="p-2 rounded-xl bg-info/10 border border-info/20 flex-shrink-0">
+              <ClipboardList className="w-5 h-5 text-info" />
             </div>
             <div>
               <p className="font-semibold text-sm md:text-base">
@@ -511,7 +521,7 @@ function RecordsPageContent() {
               setCategoryFilter("");
             }}
             className={`btn-primary text-sm whitespace-nowrap w-full sm:w-auto ${
-              typeFilter === "pendiente" ? "ring-2 ring-accent/50" : ""
+              typeFilter === "pendiente" ? "ring-2 ring-info/50" : ""
             }`}
           >
             Revisar ahora
@@ -532,11 +542,11 @@ function RecordsPageContent() {
         </button>
         <button
           onClick={() => setActiveTab("fondo_ahorro")}
-          className={`pb-3 px-2 text-sm font-medium transition-colors relative ${activeTab === "fondo_ahorro" ? "text-accent" : "text-muted hover:text-foreground"}`}
+          className={`pb-3 px-2 text-sm font-medium transition-colors relative ${activeTab === "fondo_ahorro" ? "text-info" : "text-muted hover:text-foreground"}`}
         >
           Fondo de Ahorro
           {activeTab === "fondo_ahorro" && (
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-info rounded-t-full" />
           )}
         </button>
       </div>
@@ -555,12 +565,12 @@ function RecordsPageContent() {
           >
             {chip.label}
             {chip.id === "pendiente" && categorization.poorQualityCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-accent/20 text-accent text-[10px] font-bold">
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-info/20 text-info text-xs font-bold">
                 {categorization.poorQualityCount}
               </span>
             )}
             {chip.id === "transferencia" && categorization.transferCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-surface-elevated text-muted text-[10px]">
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-surface-elevated text-muted text-xs">
                 {categorization.transferCount}
               </span>
             )}
@@ -656,26 +666,26 @@ function RecordsPageContent() {
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-muted">Total Ingresos:</span>
-                <span className="text-success font-semibold">${totalIngresos.toLocaleString("es-CL")}</span>
+                <span className="text-income font-semibold tabular-nums">{formatCLP(totalIngresos)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-muted">Total Egresos:</span>
-                <span className="text-danger font-semibold">${totalEgresos.toLocaleString("es-CL")}</span>
+                <span className="text-expense font-semibold tabular-nums">{formatCLP(totalEgresos)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-muted">Saldo:</span>
                 <span
-                  className={`font-semibold ${
-                    totalIngresos - totalEgresos >= 0 ? "text-success" : "text-danger"
+                  className={`font-semibold tabular-nums ${
+                    totalIngresos - totalEgresos >= 0 ? "text-income" : "text-expense"
                   }`}
                 >
-                  ${(totalIngresos - totalEgresos).toLocaleString("es-CL")}
+                  {formatCLP(totalIngresos - totalEgresos)}
                 </span>
               </div>
             </div>
 
             {typeFilter === "pendiente" && (
-              <div className="flex flex-col gap-1 text-xs text-accent px-1">
+              <div className="flex flex-col gap-1 text-xs text-info px-1">
                 <div className="flex items-center gap-2">
                   <ArrowRightLeft className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>
@@ -702,7 +712,7 @@ function RecordsPageContent() {
             {selectedIds.size} {selectedIds.size === 1 ? "movimiento seleccionado" : "movimientos seleccionados"}
           </p>
           {bulkTypeMismatch ? (
-            <p className="text-xs text-accent">Selecciona movimientos del mismo tipo (ingreso o egreso).</p>
+            <p className="text-xs text-info">Selecciona movimientos del mismo tipo (ingreso o egreso).</p>
           ) : (
             <>
               <select
@@ -738,7 +748,7 @@ function RecordsPageContent() {
 
       {/* Tabla responsive — scroll horizontal en móvil */}
       <div className="glass-panel flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
-        <p className="md:hidden px-3 pt-3 text-[11px] text-muted">
+        <p className="md:hidden px-3 pt-3 text-xs text-muted">
           Desliza horizontalmente para ver todas las columnas
         </p>
         <div className="overflow-x-auto md:flex-1 custom-scrollbar">
@@ -842,7 +852,7 @@ function RecordsPageContent() {
                         </p>
                       )}
                       {typeFilter === "pendiente" && categorization.poorQualityCount === 0 && (
-                        <p className="text-success text-xs md:text-sm">
+                        <p className="text-income text-xs md:text-sm">
                           No hay movimientos pendientes de categorizar en este fondo.
                         </p>
                       )}
@@ -866,7 +876,7 @@ function RecordsPageContent() {
                         ) : null}
                       </td>
                     )}
-                    <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-foreground/80 text-[10px] md:text-sm">
+                    <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-foreground/80 text-xs md:text-sm">
                       <span className="md:hidden">{format(record.date, "dd/MM/yy")}</span>
                       <span className="hidden md:inline">{format(record.date, "dd MMM, yyyy", { locale: es })}</span>
                     </td>
@@ -876,51 +886,51 @@ function RecordsPageContent() {
                       </span>
                     </td>
                     <td className="px-2 md:px-6 py-3 md:py-4">
-                      <span className={`inline-flex items-center px-1.5 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-medium border whitespace-nowrap
-                        ${record.type === 'Ingreso' ? 'bg-success/10 text-success border-success/20' : 'bg-danger/10 text-danger border-danger/20'}`}>
+                      <span className={`inline-flex items-center px-1.5 md:px-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap
+                        ${record.type === 'Ingreso' ? 'bg-income/10 text-income border-income/20' : 'bg-expense/10 text-expense border-expense/20'}`}>
                         {record.type}
                       </span>
                     </td>
-                    <td className={`px-2 md:px-6 py-3 md:py-4 font-semibold text-[10px] md:text-sm ${record.amount < 0 ? 'text-danger' : record.type === 'Ingreso' ? 'text-success' : ''}`}>
+                    <td className={`px-2 md:px-6 py-3 md:py-4 font-semibold text-xs md:text-sm tabular-nums ${record.amount < 0 ? 'text-expense' : record.type === 'Ingreso' ? 'text-income' : ''}`}>
                       <span className="whitespace-nowrap">
-                        {record.amount < 0 ? '-' : ''}${Math.abs(record.amount).toLocaleString('es-CL')}
+                        {record.amount < 0 ? '-' : ''}{formatCLP(Math.abs(record.amount))}
                       </span>
                     </td>
                     <td className="px-3 md:px-6 py-3 md:py-4">
                       {record.transferId ? (
-                        <span className="text-muted text-[9px] md:text-[10px]">Transferencia</span>
+                        <span className="text-muted text-xs md:text-xs">Transferencia</span>
                       ) : record.categoryName ? (
                         <span
-                          className={`px-1.5 md:px-2 py-0.5 rounded text-[9px] md:text-[10px] whitespace-nowrap ${
+                          className={`px-1.5 md:px-2 py-0.5 rounded text-xs md:text-xs whitespace-nowrap ${
                             isPoorlyCategorized(record)
-                              ? "bg-accent/10 text-accent border border-accent/20"
+                              ? "bg-info/10 text-info border border-info/20"
                               : "bg-surface-elevated text-muted"
                           }`}
                         >
                           {record.categoryName}
                         </span>
                       ) : (
-                        <span className="text-accent text-[9px] md:text-[10px]">Sin categoría</span>
+                        <span className="text-info text-xs md:text-xs">Sin categoría</span>
                       )}
                     </td>
                     <td className="px-3 md:px-6 py-3 md:py-4 hidden lg:table-cell">
                       {record.eventId && record.eventName ? (
                         <Link
                           href={`/events/${record.eventId}`}
-                          className="text-[9px] md:text-[10px] text-primary hover:underline flex items-center gap-1 max-w-[140px]"
+                          className="text-xs md:text-xs text-primary hover:underline flex items-center gap-1 max-w-[140px]"
                           title={record.eventName}
                         >
                           <PartyPopper className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">{record.eventName}</span>
                         </Link>
                       ) : (
-                        <span className="text-muted text-[9px] md:text-[10px]">—</span>
+                        <span className="text-muted text-xs md:text-xs">—</span>
                       )}
                     </td>
                     <td className="px-3 md:px-6 py-3 md:py-4 hidden lg:table-cell">
                       {suggestion ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] md:text-[10px] text-success font-medium truncate max-w-[100px]">
+                          <span className="text-xs md:text-xs text-income font-medium truncate max-w-[100px]">
                             {suggestion.categoryName}
                           </span>
                           {isAdminOrDirectiva && !record.transferId && (
@@ -933,7 +943,7 @@ function RecordsPageContent() {
                                 )
                               }
                               disabled={applyingId === record.id}
-                              className="p-1 rounded-md bg-success/10 text-success hover:bg-success/20 border border-success/20 disabled:opacity-50"
+                              className="p-1 rounded-md bg-income/10 text-income hover:bg-income/20 border border-income/20 disabled:opacity-50"
                               title={`Aplicar ${suggestion.categoryName}`}
                             >
                               {applyingId === record.id ? (
@@ -945,7 +955,7 @@ function RecordsPageContent() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-muted text-[9px] md:text-[10px]">—</span>
+                        <span className="text-muted text-xs md:text-xs">—</span>
                       )}
                     </td>
                     {isAdminOrDirectiva && (
@@ -960,15 +970,15 @@ function RecordsPageContent() {
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleVoid(record)}
-                              className="p-1.5 rounded-lg hover:bg-surface-elevated text-muted hover:text-danger"
+                              onClick={() => setVoidTarget(record)}
+                              className="p-1.5 rounded-lg hover:bg-surface-elevated text-muted hover:text-expense"
                               title="Anular"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         ) : (
-                          <span className="text-[10px] text-muted">Transferencia</span>
+                          <span className="text-xs text-muted">Transferencia</span>
                         )}
                       </td>
                     )}
@@ -991,6 +1001,14 @@ function RecordsPageContent() {
         record={editingRecord}
         defaultFund={activeTab}
         defaultType={defaultModalType}
+      />
+      <ConfirmDialog
+        open={!!voidTarget}
+        onClose={() => setVoidTarget(null)}
+        onConfirm={handleVoid}
+        title="¿Anular este movimiento?"
+        description={`Dejará de contar en los saldos. "${voidTarget?.description ?? ""}" quedará registrado en la auditoría.`}
+        confirmLabel="Anular movimiento"
       />
     </div>
   );

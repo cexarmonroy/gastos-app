@@ -9,6 +9,7 @@ import autoTable from "jspdf-autotable";
 import { Download, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { getBase64ImageFromUrl } from "@/lib/pdf-utils";
+import { formatCLP as formatMoney } from "@/lib/format";
 
 type Summary = NonNullable<Awaited<ReturnType<typeof import("@/app/actions/public-portal").getPublicTreasurySummary>>>;
 type Project = Awaited<ReturnType<typeof import("@/app/actions/public-portal").getPublicProjectsSummary>>[number];
@@ -20,8 +21,6 @@ interface PublicPortalViewProps {
 
 export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
   const [isExporting, setIsExporting] = useState(false);
-
-  const formatMoney = (value: number) => `$${value.toLocaleString("es-CL")}`;
 
   const lastUpdateLabel = useMemo(() => {
     if (!summary.lastMovementDate) return "Sin movimientos";
@@ -125,11 +124,11 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div className="glass-panel p-5">
             <p className="text-muted text-sm mb-1">Total ingresos</p>
-            <p className="text-2xl font-bold text-success">{formatMoney(summary.totalIngresos)}</p>
+            <p className="text-2xl font-bold text-income">{formatMoney(summary.totalIngresos)}</p>
           </div>
           <div className="glass-panel p-5">
             <p className="text-muted text-sm mb-1">Total egresos</p>
-            <p className="text-2xl font-bold text-danger">{formatMoney(summary.totalEgresos)}</p>
+            <p className="text-2xl font-bold text-expense">{formatMoney(summary.totalEgresos)}</p>
           </div>
         </div>
 
@@ -143,7 +142,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
                 summary.incomeBreakdown.map((item) => (
                   <div key={item.categoryId ?? item.categoryName} className="flex justify-between text-sm">
                     <span className="text-muted">{item.categoryName}</span>
-                    <span className="text-success font-mono">{formatMoney(item.total)}</span>
+                    <span className="text-income tabular-nums">{formatMoney(item.total)}</span>
                   </div>
                 ))
               )}
@@ -158,7 +157,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
                 summary.expenseBreakdown.map((item) => (
                   <div key={item.categoryId ?? item.categoryName} className="flex justify-between text-sm">
                     <span className="text-muted">{item.categoryName}</span>
-                    <span className="text-danger font-mono">{formatMoney(item.total)}</span>
+                    <span className="text-expense tabular-nums">{formatMoney(item.total)}</span>
                   </div>
                 ))
               )}
@@ -185,11 +184,7 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
                     </div>
                     <div className="w-full bg-border rounded-full h-2 mb-2">
                       <div
-                        className={`h-2 rounded-full ${
-                          isExecution
-                            ? "bg-gradient-to-r from-danger/80 to-danger"
-                            : "bg-gradient-to-r from-primary to-accent"
-                        }`}
+                        className="h-2 rounded-full bg-primary"
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
@@ -231,8 +226,8 @@ export function PublicPortalView({ summary, projects }: PublicPortalViewProps) {
                     <td className="p-3">{movement.fundName}</td>
                     <td className="p-3">{movement.categoryName ?? "Sin categoría"}</td>
                     <td
-                      className={`p-3 text-right font-mono ${
-                        movement.type === "Ingreso" ? "text-success" : "text-danger"
+                      className={`p-3 text-right tabular-nums ${
+                        movement.type === "Ingreso" ? "text-income" : "text-expense"
                       }`}
                     >
                       {movement.type === "Ingreso" ? "+" : "-"}

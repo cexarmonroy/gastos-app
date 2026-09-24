@@ -64,7 +64,7 @@ export default function AuditPage() {
   }, [logs]);
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div>
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <Shield className="w-7 h-7 text-primary" />
@@ -125,7 +125,7 @@ export default function AuditPage() {
       )}
 
       {error && (
-        <div className="glass-panel p-4 mb-6 border border-danger/30 text-danger text-sm">{error}</div>
+        <div className="glass-panel p-4 mb-6 border border-expense/30 text-expense text-sm">{error}</div>
       )}
 
       <div className="glass-panel overflow-hidden">
@@ -153,7 +153,7 @@ export default function AuditPage() {
                           {AUDIT_ACTION_LABELS[log.action] ?? log.action}
                         </span>
                         <span className="text-sm text-foreground/80">{formatAuditEntity(log.entity)}</span>
-                        <span className="text-xs text-muted font-mono truncate">{log.entityId.slice(0, 8)}…</span>
+                        <span className="text-xs text-muted tabular-nums truncate">{log.entityId.slice(0, 8)}…</span>
                       </div>
                       <p className="text-sm text-foreground leading-snug mb-1">
                         {formatAuditNarrative(log)}

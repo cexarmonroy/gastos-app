@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { X, Calendar as CalendarIcon, AlignLeft, DollarSign, PartyPopper, HardHat } from "lucide-react";
+import { toast } from "sonner";
+import { Calendar as CalendarIcon, AlignLeft, PartyPopper } from "lucide-react";
 import { getEventOptions } from "@/app/actions/events";
 import { getProjectOptions } from "@/app/actions/projects";
 import { createMovement, getCategoryOptions, updateMovement } from "@/app/actions/movements";
@@ -10,6 +11,12 @@ import { getDefaultCategoryCodeForMovementLabel } from "@/lib/finance/event-cate
 import { toDateInputValue, todayDateInputValue } from "@/lib/date-only";
 import { AttachmentPanel } from "@/components/ui/AttachmentPanel";
 import type { CategoryOption, EventOption, FundTab, MovementRecord, ProjectOption } from "@/lib/finance/types";
+import { Dialog } from "@/components/ui/Dialog";
+import { Field } from "@/components/ui/Field";
+import { Input, Textarea } from "@/components/ui/Input";
+import { MoneyInput } from "@/components/ui/MoneyInput";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Button } from "@/components/ui/Button";
 
 interface RecordModalProps {
   isOpen: boolean;
@@ -86,7 +93,22 @@ export function RecordModal({
     getProjectOptions().then(setProjects);
   }, [isOpen, formData.type]);
 
-  if (!isOpen) return null;
+  const setField = <K extends keyof typeof formData>(key: K, value: (typeof formData)[K]) => {
+    setFormData((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "fund" && value !== "fondo_ahorro") {
+        next.projectId = "";
+      }
+      if ((key === "eventId" && value) || (key === "type" && next.eventId)) {
+        const code = getDefaultCategoryCodeForMovementLabel(
+          (key === "type" ? value : next.type) as "Ingreso" | "Egreso"
+        );
+        const match = categories.find((cat) => cat.code === code);
+        if (match) next.categoryId = match.id;
+      }
+      return next;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,115 +131,97 @@ export function RecordModal({
         : await createMovement(payload);
 
     if (result.success) {
+      toast.success(isEditing ? "Movimiento actualizado" : "Movimiento guardado");
       onSaved?.();
       onClose();
     } else {
-      alert("Error al guardar: " + result.error);
+      toast.error(result.error ?? "No pudimos guardar el movimiento.");
     }
 
     setIsSubmitting(false);
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => {
-      const next = { ...prev, [name]: value };
-      if (name === "fund" && value !== "fondo_ahorro") {
-        next.projectId = "";
-      }
-      if ((name === "eventId" && value) || (name === "type" && next.eventId)) {
-        const code = getDefaultCategoryCodeForMovementLabel(
-          (name === "type" ? value : next.type) as "Ingreso" | "Egreso"
-        );
-        const match = categories.find((cat) => cat.code === code);
-        if (match) next.categoryId = match.id;
-      }
-      return next;
-    });
-  };
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-
-      <div className="modal-panel animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-border relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[50px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
-          <h2 className="text-xl font-bold">{isEditing ? "Editar Registro" : "Nuevo Registro"}</h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-muted hover:text-foreground bg-surface-elevated hover:bg-border/40 rounded-full transition-colors relative z-10"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title={isEditing ? "Editar movimiento" : "Nuevo movimiento"}
+      footer={
+        <>
+          <Button type="button" variant="secondary" size="md" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="record-form" size="md" loading={isSubmitting} loadingText="Guardando...">
+            {isEditing ? "Actualizar movimiento" : "Guardar movimiento"}
+          </Button>
+        </>
+      }
+    >
+      <form id="record-form" onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Monto">
+            {(inputProps) => (
+              <MoneyInput
+                {...inputProps}
+                name="amount"
+                required
+                autoFocus
+                value={formData.amount}
+                onChange={(v) => setField("amount", v)}
+              />
+            )}
+          </Field>
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium text-foreground">Tipo</p>
+            <SegmentedControl
+              aria-label="Tipo de movimiento"
+              options={[
+                { value: "Ingreso", label: "Ingreso" },
+                { value: "Egreso", label: "Egreso" },
+              ]}
+              value={formData.type}
+              onChange={(v) => setField("type", v)}
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Monto</label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <input
-                  type="number"
-                  name="amount"
-                  step="0.01"
-                  required
-                  className="input-premium pl-10"
-                  value={formData.amount}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Tipo</label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                className="select-premium py-[11px]"
-              >
-                <option value="Ingreso">Ingreso</option>
-                <option value="Egreso">Egreso</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Descripción</label>
+        <Field label="Descripción">
+          {(inputProps) => (
             <div className="relative">
               <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-muted" />
-              <textarea
+              <Textarea
+                {...inputProps}
                 name="description"
                 required
-                className="input-premium pl-10 resize-none min-h-[80px]"
+                className="pl-10"
+                placeholder="Ej.: Compra de premios para bingo"
                 value={formData.description}
-                onChange={handleChange}
+                onChange={(e) => setField("description", e.target.value)}
               />
             </div>
-          </div>
+          )}
+        </Field>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Fondo</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium text-foreground">Fondo</p>
+            <SegmentedControl
+              aria-label="Fondo"
+              options={[
+                { value: "caja_chica", label: "Caja Chica" },
+                { value: "fondo_ahorro", label: "Fondo de Ahorro" },
+              ]}
+              value={formData.fund}
+              onChange={(v) => setField("fund", v)}
+            />
+          </div>
+          <Field label="Categoría" hint="Automática: se sugerirá según la actividad">
+            {(inputProps) => (
               <select
-                name="fund"
-                value={formData.fund}
-                onChange={handleChange}
-                className="select-premium py-[11px]"
-              >
-                <option value="caja_chica">Caja Chica</option>
-                <option value="fondo_ahorro">Fondo de Ahorro</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Categoría</label>
-              <select
+                {...inputProps}
                 name="categoryId"
                 value={formData.categoryId}
-                onChange={handleChange}
+                onChange={(e) => setField("categoryId", e.target.value)}
                 className="select-premium py-[11px]"
               >
                 <option value="">Automática (Otros)</option>
@@ -227,19 +231,18 @@ export function RecordModal({
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
+            )}
+          </Field>
+        </div>
 
-          {formData.fund === "fondo_ahorro" && (
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <HardHat className="w-4 h-4 text-accent" />
-                Proyecto (opcional)
-              </label>
+        {formData.fund === "fondo_ahorro" && (
+          <Field label="Proyecto" optional>
+            {(inputProps) => (
               <select
+                {...inputProps}
                 name="projectId"
                 value={formData.projectId}
-                onChange={handleChange}
+                onChange={(e) => setField("projectId", e.target.value)}
                 className="select-premium py-[11px]"
               >
                 <option value="">Sin proyecto</option>
@@ -249,18 +252,17 @@ export function RecordModal({
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            )}
+          </Field>
+        )}
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground flex items-center gap-2">
-              <PartyPopper className="w-4 h-4 text-accent" />
-              Actividad (opcional)
-            </label>
+        <Field label="Actividad" optional>
+          {(inputProps) => (
             <select
+              {...inputProps}
               name="eventId"
               value={formData.eventId}
-              onChange={handleChange}
+              onChange={(e) => setField("eventId", e.target.value)}
               className="select-premium py-[11px]"
             >
               <option value="">Sin actividad</option>
@@ -270,37 +272,31 @@ export function RecordModal({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Fecha</label>
-            <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-              <input
-                type="date"
-                name="date"
-                required
-                className="input-premium pl-10 [&::-webkit-calendar-picker-indicator]:invert-[0.8]"
-                value={formData.date}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {isEditing && record?.id && isAdminOrDirectiva && (
-            <AttachmentPanel movementId={record.id} />
           )}
+        </Field>
+        <p className="text-xs text-subtle -mt-3 flex items-center gap-1.5">
+          <PartyPopper className="w-3.5 h-3.5" />
+          Vincular a una actividad o proyecto es opcional.
+        </p>
 
-          <div className="pt-6 border-t border-border flex items-center justify-end gap-3 bg-surface-elevated -mx-6 -mb-6 p-6 rounded-b-2xl">
-            <button type="button" onClick={onClose} className="btn-secondary px-5 py-2">
-              Cancelar
-            </button>
-            <button type="submit" disabled={isSubmitting} className="btn-primary px-5 py-2 disabled:opacity-50">
-              {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Guardar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Field label="Fecha">
+          {(inputProps) => (
+            <Input
+              {...inputProps}
+              type="date"
+              name="date"
+              required
+              icon={<CalendarIcon className="w-4 h-4" />}
+              value={formData.date}
+              onChange={(e) => setField("date", e.target.value)}
+            />
+          )}
+        </Field>
+
+        {isEditing && record?.id && isAdminOrDirectiva && (
+          <AttachmentPanel movementId={record.id} />
+        )}
+      </form>
+    </Dialog>
   );
 }

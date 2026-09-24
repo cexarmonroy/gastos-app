@@ -142,9 +142,7 @@ export function getExportContents(options: {
   ];
 }
 
-export function formatMoney(amount: number): string {
-  return `$${amount.toLocaleString("es-CL")}`;
-}
+export { formatCLP as formatMoney } from "@/lib/format";
 
 export function formatShareOfTotal(
   percent: number,

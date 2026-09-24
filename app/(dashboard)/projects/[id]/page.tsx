@@ -15,6 +15,7 @@ import {
 } from "@/components/projects/ProjectFundingSummary";
 import { isFundraisingProject, PROJECT_STATUS_LABELS } from "@/lib/finance/project-labels";
 import type { MovementRecord, ProjectSummary } from "@/lib/finance/types";
+import { formatCLP as formatMoney } from "@/lib/format";
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session } = useSession();
@@ -46,9 +47,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     loadProject();
   }, [projectId]);
 
-  const formatMoney = (n: number) =>
-    "$" + n.toLocaleString("es-CL", { maximumFractionDigits: 0 });
-
   if (isLoading) {
     return <div className="glass-panel p-12 text-center text-muted">Cargando...</div>;
   }
@@ -65,7 +63,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div>
       <Link
         href="/projects"
         className="inline-flex items-center gap-2 text-muted hover:text-foreground text-sm mb-4"
@@ -78,7 +76,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl md:text-3xl font-bold">{project.name}</h1>
-            <span className="text-xs px-2 py-1 rounded-full bg-accent/20 text-accent border border-accent/30">
+            <span className="text-xs px-2 py-1 rounded-full bg-info/20 text-info border border-info/30">
               {PROJECT_STATUS_LABELS[project.status]}
             </span>
             <span className="text-xs px-2 py-1 rounded-full bg-surface-elevated text-muted border border-border">
@@ -117,7 +115,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </p>
         <p
           className={`text-3xl font-bold mb-4 ${
-            isFundraisingProject(project.fundingMode) ? "text-accent" : "text-danger"
+            isFundraisingProject(project.fundingMode) ? "text-info" : "text-expense"
           }`}
         >
           {isFundraisingProject(project.fundingMode)
@@ -138,19 +136,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="glass-panel p-5">
-          <TrendingUp className="w-5 h-5 text-success mb-2" />
+          <TrendingUp className="w-5 h-5 text-income mb-2" />
           <p className="text-muted text-sm">Fondos asignados</p>
-          <p className="text-2xl font-bold text-success">{formatMoney(project.totalIncome)}</p>
+          <p className="text-2xl font-bold text-income">{formatMoney(project.totalIncome)}</p>
         </div>
         <div className="glass-panel p-5">
-          <TrendingDown className="w-5 h-5 text-danger mb-2" />
+          <TrendingDown className="w-5 h-5 text-expense mb-2" />
           <p className="text-muted text-sm">Gastos del proyecto</p>
-          <p className="text-2xl font-bold text-danger">{formatMoney(project.totalExpense)}</p>
+          <p className="text-2xl font-bold text-expense">{formatMoney(project.totalExpense)}</p>
         </div>
         <div className="glass-panel p-5">
           <Target className="w-5 h-5 text-primary mb-2" />
           <p className="text-muted text-sm">Saldo disponible</p>
-          <p className={`text-2xl font-bold ${project.balance >= 0 ? "text-success" : "text-danger"}`}>
+          <p className={`text-2xl font-bold ${project.balance >= 0 ? "text-income" : "text-expense"}`}>
             {formatMoney(project.balance)}
           </p>
         </div>
@@ -190,16 +188,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
                           m.type === "Ingreso"
-                            ? "bg-success/10 text-success"
-                            : "bg-danger/10 text-danger"
+                            ? "bg-income/10 text-income"
+                            : "bg-expense/10 text-expense"
                         }`}
                       >
                         {m.type}
                       </span>
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-mono font-semibold ${
-                        m.type === "Ingreso" ? "text-success" : "text-danger"
+                      className={`px-4 py-3 text-right tabular-nums font-semibold ${
+                        m.type === "Ingreso" ? "text-income" : "text-expense"
                       }`}
                     >
                       {formatMoney(Math.abs(m.amount))}

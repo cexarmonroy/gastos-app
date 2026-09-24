@@ -1,17 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-headline",
-});
 
 export const metadata: Metadata = {
-  title: "Sistema de Gestión | Premium",
-  description: "Administración avanzada de registros",
+  title: {
+    default: "Tesorería CGPA",
+    template: "%s · Tesorería CGPA",
+  },
+  description: "Tesorería del Centro General de Padres y Apoderados",
 };
 
 export const viewport: Viewport = {
@@ -21,6 +19,7 @@ export const viewport: Viewport = {
 };
 
 import AuthProvider from "@/components/providers/AuthProvider";
+import { Toaster } from "@/components/ui/Toaster";
 
 export default function RootLayout({
   children,
@@ -29,12 +28,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.className} ${plusJakartaSans.variable}`} suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <main className="min-h-screen flex flex-col relative overflow-hidden">
             {children}
           </main>
         </AuthProvider>
+        <Toaster />
       </body>
     </html>
   );

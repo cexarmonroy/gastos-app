@@ -6,6 +6,7 @@ import { formatCalendarDate } from "@/lib/date-only";
 import { ArrowRightLeft, Plus } from "lucide-react";
 import { fetchTransfers } from "@/app/actions/transfers";
 import { TransferModal } from "@/components/ui/TransferModal";
+import { formatCLP as formatMoney } from "@/lib/format";
 
 type TransferItem = Awaited<ReturnType<typeof fetchTransfers>>[number];
 
@@ -26,11 +27,8 @@ export default function TransfersPage() {
     loadTransfers();
   }, []);
 
-  const formatMoney = (value: number) =>
-    "$" + value.toLocaleString("es-CL", { maximumFractionDigits: 0 });
-
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
+    <div className="flex flex-col h-full">
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Transferencias</h1>
@@ -86,8 +84,8 @@ export default function TransfersPage() {
                         <span className="px-2 py-0.5 rounded bg-surface-elevated text-xs">
                           {transfer.fromFundName}
                         </span>
-                        <ArrowRightLeft className="w-3 h-3 text-accent" />
-                        <span className="px-2 py-0.5 rounded bg-accent/10 text-accent text-xs border border-accent/20">
+                        <ArrowRightLeft className="w-3 h-3 text-info" />
+                        <span className="px-2 py-0.5 rounded bg-info/10 text-info text-xs border border-info/20">
                           {transfer.toFundName}
                         </span>
                       </div>
@@ -95,7 +93,7 @@ export default function TransfersPage() {
                     <td className="px-4 py-4 text-muted max-w-xs truncate" title={transfer.description}>
                       {transfer.description || "—"}
                     </td>
-                    <td className="px-4 py-4 text-right font-semibold text-accent font-mono">
+                    <td className="px-4 py-4 text-right font-semibold text-info tabular-nums">
                       {formatMoney(transfer.amount)}
                     </td>
                     <td className="px-4 py-4 hidden md:table-cell text-muted text-xs">

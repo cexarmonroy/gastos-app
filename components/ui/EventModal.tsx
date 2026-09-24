@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Calendar as CalendarIcon, AlignLeft, Target } from "lucide-react";
+import { toast } from "sonner";
+import { Calendar as CalendarIcon, AlignLeft, Target } from "lucide-react";
 import { createEvent, updateEvent } from "@/app/actions/events";
 import { toDateInputValue, todayDateInputValue } from "@/lib/date-only";
 import type { EventSummary } from "@/lib/finance/types";
+import { Dialog } from "@/components/ui/Dialog";
+import { Field } from "@/components/ui/Field";
+import { Input, Textarea } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -43,8 +48,6 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
     }
   }, [isOpen, event]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -62,93 +65,90 @@ export function EventModal({ isOpen, onClose, onSaved, event }: EventModalProps)
         : await createEvent(payload);
 
     if (result.success) {
+      toast.success(isEditing ? "Actividad actualizada" : "Actividad creada");
       onSaved?.();
       onClose();
     } else {
-      alert("Error: " + result.error);
+      toast.error(result.error ?? "No pudimos guardar la actividad.");
     }
 
     setIsSubmitting(false);
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="modal-panel">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-bold">{isEditing ? "Editar Actividad" : "Nueva Actividad"}</h2>
-          <button onClick={onClose} className="p-2 rounded-full bg-surface-elevated hover:bg-border/40">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-sm text-foreground">Nombre</label>
-            <input
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title={isEditing ? "Editar actividad" : "Nueva actividad"}
+      footer={
+        <>
+          <Button type="button" variant="secondary" size="md" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="event-form" size="md" loading={isSubmitting} loadingText="Guardando...">
+            {isEditing ? "Actualizar actividad" : "Crear actividad"}
+          </Button>
+        </>
+      }
+    >
+      <form id="event-form" onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Nombre">
+          {(inputProps) => (
+            <Input
+              {...inputProps}
               name="name"
               required
               placeholder="Ej: Bingo 2026, Rifa Día de la Madre"
-              className="input-premium"
               value={formData.name}
               onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
             />
-          </div>
+          )}
+        </Field>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm text-foreground">Fecha</label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <input
-                  type="date"
-                  required
-                  className="input-premium pl-10"
-                  value={formData.date}
-                  onChange={(e) => setFormData((p) => ({ ...p, date: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm text-foreground">Meta recaudación</label>
-              <div className="relative">
-                <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  placeholder="Opcional"
-                  className="input-premium pl-10"
-                  value={formData.goal}
-                  onChange={(e) => setFormData((p) => ({ ...p, goal: e.target.value }))}
-                />
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Fecha">
+            {(inputProps) => (
+              <Input
+                {...inputProps}
+                type="date"
+                required
+                icon={<CalendarIcon className="w-4 h-4" />}
+                value={formData.date}
+                onChange={(e) => setFormData((p) => ({ ...p, date: e.target.value }))}
+              />
+            )}
+          </Field>
+          <Field label="Meta de recaudación" optional>
+            {(inputProps) => (
+              <Input
+                {...inputProps}
+                type="number"
+                min="0"
+                step="1000"
+                placeholder="Sin meta definida"
+                icon={<Target className="w-4 h-4" />}
+                value={formData.goal}
+                onChange={(e) => setFormData((p) => ({ ...p, goal: e.target.value }))}
+              />
+            )}
+          </Field>
+        </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm text-foreground">Descripción</label>
+        <Field label="Descripción" optional>
+          {(inputProps) => (
             <div className="relative">
               <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-muted" />
-              <textarea
-                className="input-premium pl-10 resize-none min-h-[70px]"
+              <Textarea
+                {...inputProps}
+                className="pl-10"
                 placeholder="Detalles de la actividad..."
                 value={formData.description}
                 onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
               />
             </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button type="button" onClick={onClose} className="btn-secondary px-5 py-2">
-              Cancelar
-            </button>
-            <button type="submit" disabled={isSubmitting} className="btn-primary px-5 py-2 disabled:opacity-50">
-              {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Crear"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+        </Field>
+      </form>
+    </Dialog>
   );
 }

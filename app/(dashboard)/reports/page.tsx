@@ -49,6 +49,7 @@ import {
   formatShareOfTotal,
   getExportContents,
 } from "@/lib/finance/report-narrative";
+import { formatCompactCLP } from "@/lib/format";
 import {
   computeFundBalanceSnapshot,
   supportsFundBalanceSnapshot,
@@ -99,17 +100,17 @@ function FundBalancePanel({ snapshot }: { snapshot: FundBalanceSnapshot }) {
       <div className="grid grid-cols-3 gap-2 text-xs">
         <div>
           <p className="text-muted mb-0.5">Inicial</p>
-          <p className="font-mono text-foreground/80">{formatMoney(snapshot.saldoInicial)}</p>
+          <p className="tabular-nums text-foreground/80">{formatMoney(snapshot.saldoInicial)}</p>
         </div>
         <div>
           <p className="text-muted mb-0.5">Final</p>
-          <p className="font-mono text-foreground/80">{formatMoney(snapshot.saldoFinal)}</p>
+          <p className="tabular-nums text-foreground/80">{formatMoney(snapshot.saldoFinal)}</p>
         </div>
         <div>
           <p className="text-muted mb-0.5">Cambio</p>
           <p
-            className={`font-mono font-semibold ${
-              snapshot.cambioSaldo >= 0 ? "text-success" : "text-danger"
+            className={`tabular-nums font-semibold ${
+              snapshot.cambioSaldo >= 0 ? "text-income" : "text-expense"
             }`}
           >
             {snapshot.cambioSaldo >= 0 ? "+" : ""}
@@ -118,14 +119,14 @@ function FundBalancePanel({ snapshot }: { snapshot: FundBalanceSnapshot }) {
         </div>
       </div>
       {snapshot.cajaChica && snapshot.fondoAhorro && (
-        <p className="text-muted text-[11px] leading-snug">
+        <p className="text-muted text-xs leading-snug">
           Caja {formatMoney(snapshot.cajaChica.saldoInicial)} → {formatMoney(snapshot.cajaChica.saldoFinal)}
           {" · "}
           Fondo {formatMoney(snapshot.fondoAhorro.saldoInicial)} →{" "}
           {formatMoney(snapshot.fondoAhorro.saldoFinal)}
         </p>
       )}
-      <p className="text-muted text-[10px]">
+      <p className="text-muted text-xs">
         Incluye transferencias entre fondos. Distinto al resultado operativo del período.
       </p>
     </div>
@@ -144,18 +145,18 @@ function ComparisonDelta({
   const deltaAmount = metric.current - metric.previous;
 
   if (!metric.hasPreviousData) {
-    return <span className="text-muted text-[11px]">Sin datos en {previousLabel}</span>;
+    return <span className="text-muted text-xs">Sin datos en {previousLabel}</span>;
   }
   if (metric.direction === "new") {
     return (
-      <span className="text-muted text-[11px]">
+      <span className="text-muted text-xs">
         {formatMoney(metric.current)} en este período (sin base en {previousLabel})
       </span>
     );
   }
   if (metric.deltaPercent === null || metric.direction === "flat") {
     return (
-      <span className="text-muted text-[11px] flex items-center gap-0.5">
+      <span className="text-muted text-xs flex items-center gap-0.5">
         <Minus className="w-3 h-3" />
         Sin cambio vs {previousLabel}
       </span>
@@ -165,7 +166,7 @@ function ComparisonDelta({
   const isPositive = deltaAmount > 0;
   const isGood = invertColors ? !isPositive : isPositive;
   const Icon = isPositive ? ArrowUp : ArrowDown;
-  const colorClass = isGood ? "text-success" : "text-danger";
+  const colorClass = isGood ? "text-income" : "text-expense";
   const useAbsolute =
     Math.abs(metric.deltaPercent) > 200 ||
     (Math.abs(metric.previous) < Math.abs(metric.current) * 0.05 &&
@@ -173,7 +174,7 @@ function ComparisonDelta({
 
   if (useAbsolute) {
     return (
-      <span className={`text-[11px] flex items-center gap-0.5 ${colorClass}`}>
+      <span className={`text-xs flex items-center gap-0.5 ${colorClass}`}>
         <Icon className="w-3 h-3" />
         {deltaAmount >= 0 ? "+" : ""}
         {formatMoney(deltaAmount)} vs {previousLabel}
@@ -182,7 +183,7 @@ function ComparisonDelta({
   }
 
   return (
-    <span className={`text-[11px] flex items-center gap-0.5 ${colorClass}`}>
+    <span className={`text-xs flex items-center gap-0.5 ${colorClass}`}>
       <Icon className="w-3 h-3" />
       {isPositive ? "+" : ""}
       {metric.deltaPercent}% vs {previousLabel}
@@ -616,7 +617,7 @@ export default function ReportsPage() {
   const showCharts = !isPageLoading && filtersValid && activeRecords.length > 0 && !isAssemblyMode;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
+    <div className="flex flex-col h-full">
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Reportes</h1>
@@ -657,9 +658,9 @@ export default function ReportsPage() {
       </div>
 
       {error && !isPageLoading && (
-        <div className="mb-4 glass-panel p-4 border border-danger/30 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-danger">{error}</p>
+        <div className="mb-4 glass-panel p-4 border border-expense/30 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-expense flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-expense">{error}</p>
         </div>
       )}
 
@@ -679,7 +680,7 @@ export default function ReportsPage() {
                   >
                     <Check
                       className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${
-                        item.included ? "text-success" : "text-muted"
+                        item.included ? "text-income" : "text-muted"
                       }`}
                     />
                     {item.label}
@@ -692,7 +693,7 @@ export default function ReportsPage() {
               <ul className="space-y-1.5">
                 {exportChecklistCsv.map((item) => (
                   <li key={item.label} className="flex items-start gap-2 text-xs text-muted">
-                    <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-success" />
+                    <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-income" />
                     {item.label}
                   </li>
                 ))}
@@ -791,34 +792,34 @@ export default function ReportsPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <div className="glass-panel p-4 col-span-2 lg:col-span-1">
                   <p className="text-muted text-xs mb-1">Saldo total</p>
-                  <p className="text-lg md:text-xl font-bold">
-                    ${assemblySnapshot.saldoTotal.toLocaleString("es-CL")}
+                  <p className="text-lg md:text-xl font-bold tabular-nums">
+                    {formatMoney(assemblySnapshot.saldoTotal)}
                   </p>
-                  <p className="text-muted text-[11px] mt-1 leading-snug">
-                    Caja ${assemblySnapshot.saldoCajaChica.toLocaleString("es-CL")} · Fondo{" "}
-                    ${assemblySnapshot.saldoFondoAhorro.toLocaleString("es-CL")}
+                  <p className="text-muted text-xs mt-1 leading-snug tabular-nums">
+                    Caja {formatMoney(assemblySnapshot.saldoCajaChica)} · Fondo{" "}
+                    {formatMoney(assemblySnapshot.saldoFondoAhorro)}
                   </p>
                 </div>
                 <div className="glass-panel p-4">
                   <p className="text-muted text-xs mb-1">Ingresos {selectedYear}</p>
-                  <p className="text-lg md:text-xl font-bold text-success">
-                    ${activeTotals.totalIngresos.toLocaleString("es-CL")}
+                  <p className="text-lg md:text-xl font-bold text-income tabular-nums">
+                    {formatMoney(activeTotals.totalIngresos)}
                   </p>
                 </div>
                 <div className="glass-panel p-4">
                   <p className="text-muted text-xs mb-1">Egresos {selectedYear}</p>
-                  <p className="text-lg md:text-xl font-bold text-danger">
-                    ${activeTotals.totalEgresos.toLocaleString("es-CL")}
+                  <p className="text-lg md:text-xl font-bold text-expense tabular-nums">
+                    {formatMoney(activeTotals.totalEgresos)}
                   </p>
                 </div>
                 <div className="glass-panel p-4">
                   <p className="text-muted text-xs mb-1">Resultado {selectedYear}</p>
                   <p
-                    className={`text-lg md:text-xl font-bold ${
-                      activeTotals.resultado >= 0 ? "text-success" : "text-danger"
+                    className={`text-lg md:text-xl font-bold tabular-nums ${
+                      activeTotals.resultado >= 0 ? "text-income" : "text-expense"
                     }`}
                   >
-                    ${activeTotals.resultado.toLocaleString("es-CL")}
+                    {formatMoney(activeTotals.resultado)}
                   </p>
                 </div>
               </div>
@@ -826,7 +827,7 @@ export default function ReportsPage() {
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
                 <div className="glass-panel p-4 md:p-6">
                   <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <PartyPopper className="w-5 h-5 text-accent" />
+                    <PartyPopper className="w-5 h-5 text-info" />
                     Actividades del año
                   </h3>
                   {assemblySnapshot.events.length > 0 ? (
@@ -837,31 +838,31 @@ export default function ReportsPage() {
                           <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2 text-xs md:text-sm">
                             <div>
                               <p className="text-muted">Ingresos</p>
-                              <p className="text-success font-mono">
-                                ${event.totalIncome.toLocaleString("es-CL")}
+                              <p className="text-income tabular-nums">
+                                {formatMoney(event.totalIncome)}
                               </p>
                             </div>
                             <div>
                               <p className="text-muted">Gastos</p>
-                              <p className="text-danger font-mono">
-                                ${event.totalExpense.toLocaleString("es-CL")}
+                              <p className="text-expense tabular-nums">
+                                {formatMoney(event.totalExpense)}
                               </p>
                             </div>
                             <div>
                               <p className="text-muted">Ganancia</p>
                               <p
-                                className={`font-mono font-semibold ${
-                                  event.profit >= 0 ? "text-success" : "text-danger"
+                                className={`tabular-nums font-semibold ${
+                                  event.profit >= 0 ? "text-income" : "text-expense"
                                 }`}
                               >
-                                ${event.profit.toLocaleString("es-CL")}
+                                {formatMoney(event.profit)}
                               </p>
                             </div>
                             {event.goal != null && (
                               <div>
                                 <p className="text-muted">Meta</p>
-                                <p className="font-mono">
-                                  ${event.goal.toLocaleString("es-CL")}
+                                <p className="tabular-nums">
+                                  {formatMoney(event.goal)}
                                   {event.goalProgress != null ? ` (${event.goalProgress}%)` : ""}
                                 </p>
                               </div>
@@ -890,29 +891,29 @@ export default function ReportsPage() {
                               <p className="text-muted">
                                 {project.fundingMode === "EXECUTION" ? "Presupuesto" : "Meta"}
                               </p>
-                              <p className="font-mono">${project.targetAmount.toLocaleString("es-CL")}</p>
+                              <p className="tabular-nums">{formatMoney(project.targetAmount)}</p>
                             </div>
                             <div>
                               <p className="text-muted">
                                 {project.fundingMode === "EXECUTION" ? "Gastos" : "Ingresos"}
                               </p>
                               <p
-                                className={`font-mono ${
-                                  project.fundingMode === "EXECUTION" ? "text-danger" : "text-success"
+                                className={`tabular-nums ${
+                                  project.fundingMode === "EXECUTION" ? "text-expense" : "text-income"
                                 }`}
                               >
-                                $
-                                {(project.fundingMode === "EXECUTION"
-                                  ? project.totalExpense
-                                  : project.totalIncome
-                                ).toLocaleString("es-CL")}
+                                {formatMoney(
+                                  project.fundingMode === "EXECUTION"
+                                    ? project.totalExpense
+                                    : project.totalIncome
+                                )}
                               </p>
                             </div>
                             <div>
                               <p className="text-muted">
                                 {project.fundingMode === "EXECUTION" ? "Ejecutado" : "Avance"}
                               </p>
-                              <p className="font-mono text-accent">
+                              <p className="tabular-nums text-info">
                                 {project.fundingMode === "EXECUTION"
                                   ? `${project.executionProgress ?? 0}%`
                                   : `${project.progress ?? 0}%`}
@@ -935,7 +936,7 @@ export default function ReportsPage() {
           <div className="glass-panel p-4 md:p-6 space-y-4">
             <div>
               <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <PartyPopper className="w-4 h-4 text-accent" />
+                <PartyPopper className="w-4 h-4 text-info" />
                 Actividad
               </h3>
               <select
@@ -951,7 +952,7 @@ export default function ReportsPage() {
                 ))}
               </select>
               {filterError && !selectedEventId && (
-                <p className="text-danger text-sm mt-2 flex items-center gap-1.5">
+                <p className="text-expense text-sm mt-2 flex items-center gap-1.5">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   {filterError}
                 </p>
@@ -973,7 +974,7 @@ export default function ReportsPage() {
 
             <div className="pt-4 border-t border-border">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-accent" />
+                <Wallet className="w-4 h-4 text-info" />
                 Fondo
               </h3>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -1011,7 +1012,7 @@ export default function ReportsPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <div className="glass-panel p-4">
                   <p className="text-muted text-xs mb-1">Ingresos</p>
-                  <p className="text-lg md:text-xl font-bold text-success font-mono">
+                  <p className="text-lg md:text-xl font-bold text-income tabular-nums">
                     {formatMoney(selectedEventGoal.totalIncome)}
                   </p>
                   {periodComparison && (
@@ -1025,7 +1026,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="glass-panel p-4">
                   <p className="text-muted text-xs mb-1">Gastos</p>
-                  <p className="text-lg md:text-xl font-bold text-danger font-mono">
+                  <p className="text-lg md:text-xl font-bold text-expense tabular-nums">
                     {formatMoney(selectedEventGoal.totalExpense)}
                   </p>
                   {periodComparison && (
@@ -1041,8 +1042,8 @@ export default function ReportsPage() {
                 <div className="glass-panel p-4">
                   <p className="text-muted text-xs mb-1">Ganancia</p>
                   <p
-                    className={`text-lg md:text-xl font-bold font-mono ${
-                      selectedEventGoal.profit >= 0 ? "text-success" : "text-danger"
+                    className={`text-lg md:text-xl font-bold tabular-nums ${
+                      selectedEventGoal.profit >= 0 ? "text-income" : "text-expense"
                     }`}
                   >
                     {selectedEventGoal.profit >= 0 ? "+" : ""}
@@ -1059,36 +1060,36 @@ export default function ReportsPage() {
                 </div>
                 <div className="glass-panel p-4">
                   <p className="text-muted text-xs mb-1">ROI</p>
-                  <p className="text-lg md:text-xl font-bold text-accent font-mono">
+                  <p className="text-lg md:text-xl font-bold text-info tabular-nums">
                     {activityRoi != null ? `${activityRoi}%` : "—"}
                   </p>
-                  <p className="text-muted text-[11px] mt-2">Ganancia / gastos</p>
+                  <p className="text-muted text-xs mt-2">Ganancia / gastos</p>
                 </div>
               </div>
 
               <div className="glass-panel p-4 md:p-6">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-accent" />
+                  <TrendingUp className="w-5 h-5 text-info" />
                   Meta vs real
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   {selectedEventGoal.goal != null && (
                     <div>
                       <p className="text-muted text-xs mb-1">Meta</p>
-                      <p className="font-mono font-semibold">{formatMoney(selectedEventGoal.goal)}</p>
+                      <p className="tabular-nums font-semibold">{formatMoney(selectedEventGoal.goal)}</p>
                     </div>
                   )}
                   <div>
                     <p className="text-muted text-xs mb-1">Ingresos</p>
-                    <p className="font-mono text-success">{formatMoney(selectedEventGoal.totalIncome)}</p>
+                    <p className="tabular-nums text-income">{formatMoney(selectedEventGoal.totalIncome)}</p>
                   </div>
                   <div>
                     <p className="text-muted text-xs mb-1">Gastos</p>
-                    <p className="font-mono text-danger">{formatMoney(selectedEventGoal.totalExpense)}</p>
+                    <p className="tabular-nums text-expense">{formatMoney(selectedEventGoal.totalExpense)}</p>
                   </div>
                   <div>
                     <p className="text-muted text-xs mb-1">Avance meta</p>
-                    <p className="font-mono text-accent">
+                    <p className="tabular-nums text-info">
                       {selectedEventGoal.goalProgress != null ? `${selectedEventGoal.goalProgress}%` : "—"}
                     </p>
                   </div>
@@ -1115,7 +1116,7 @@ export default function ReportsPage() {
                         {incomeBreakdown.slice(0, 6).map((item) => (
                           <div key={item.categoryId} className="flex justify-between text-xs gap-2">
                             <span className="text-muted truncate">{item.categoryName}</span>
-                            <span className="text-success font-mono flex-shrink-0">
+                            <span className="text-income tabular-nums flex-shrink-0">
                               {formatMoney(item.total)}
                             </span>
                           </div>
@@ -1130,7 +1131,7 @@ export default function ReportsPage() {
                         {expenseBreakdown.slice(0, 6).map((item) => (
                           <div key={item.categoryId} className="flex justify-between text-xs gap-2">
                             <span className="text-muted truncate">{item.categoryName}</span>
-                            <span className="text-danger font-mono flex-shrink-0">
+                            <span className="text-expense tabular-nums flex-shrink-0">
                               {formatMoney(item.total)}
                             </span>
                           </div>
@@ -1191,7 +1192,7 @@ export default function ReportsPage() {
                     />
                   </div>
                   {filterError && (
-                    <p className="text-danger text-sm mt-2 flex items-center gap-1.5">
+                    <p className="text-expense text-sm mt-2 flex items-center gap-1.5">
                       <AlertCircle className="w-4 h-4 flex-shrink-0" />
                       {filterError}
                     </p>
@@ -1205,7 +1206,7 @@ export default function ReportsPage() {
 
             <div className="pt-4 border-t border-border">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-accent" />
+                <Wallet className="w-4 h-4 text-info" />
                 Fondo
               </h3>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -1231,7 +1232,7 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <PartyPopper className="w-4 h-4 text-accent" />
+                  <PartyPopper className="w-4 h-4 text-info" />
                   Actividad
                 </h3>
                 <select
@@ -1273,7 +1274,7 @@ export default function ReportsPage() {
 
             <div>
               <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Tags className="w-4 h-4 text-accent" />
+                <Tags className="w-4 h-4 text-info" />
                 Categoría contable
               </h3>
               <select
@@ -1295,7 +1296,7 @@ export default function ReportsPage() {
         <div className="space-y-4">
           <div className="glass-panel p-4 md:p-6">
             <h3 className="font-semibold mb-1 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-accent" />
+              <TrendingUp className="w-5 h-5 text-info" />
               Resumen ejecutivo
             </h3>
             {executiveSummary && (
@@ -1304,7 +1305,7 @@ export default function ReportsPage() {
                   {periodLabel} · {executiveSummary.fundLabel}
                 </p>
                 {periodComparison && (
-                  <p className="text-muted text-[10px]">
+                  <p className="text-muted text-xs">
                     Variación bajo cada total: cambio respecto a {periodComparison.previousLabel}
                   </p>
                 )}
@@ -1323,7 +1324,7 @@ export default function ReportsPage() {
                   <div>
                     <div className="flex justify-between items-baseline">
                       <span className="text-muted text-sm">Ingresos</span>
-                      <span className="text-lg font-bold text-success font-mono">
+                      <span className="text-lg font-bold text-income tabular-nums">
                         {formatMoney(activeTotals.totalIngresos)}
                       </span>
                     </div>
@@ -1337,7 +1338,7 @@ export default function ReportsPage() {
                   <div>
                     <div className="flex justify-between items-baseline">
                       <span className="text-muted text-sm">Egresos</span>
-                      <span className="text-lg font-bold text-danger font-mono">
+                      <span className="text-lg font-bold text-expense tabular-nums">
                         {formatMoney(activeTotals.totalEgresos)}
                       </span>
                     </div>
@@ -1353,8 +1354,8 @@ export default function ReportsPage() {
                     <div className="flex justify-between items-baseline">
                       <span className="text-muted text-sm font-medium">Resultado</span>
                       <span
-                        className={`text-lg font-bold font-mono ${
-                          activeTotals.resultado >= 0 ? "text-success" : "text-danger"
+                        className={`text-lg font-bold tabular-nums ${
+                          activeTotals.resultado >= 0 ? "text-income" : "text-expense"
                         }`}
                       >
                         {activeTotals.resultado >= 0 ? "+" : ""}
@@ -1377,7 +1378,7 @@ export default function ReportsPage() {
                     <p className="text-muted text-xs uppercase tracking-wide mb-1">
                       Principales ingresos
                     </p>
-                    <p className="text-muted text-[10px] mb-2">
+                    <p className="text-muted text-xs mb-2">
                       % = participación sobre el total de ingresos del período
                     </p>
                     <div className="space-y-2">
@@ -1385,9 +1386,9 @@ export default function ReportsPage() {
                         <div key={item.label} className="flex justify-between gap-2 text-xs">
                           <span className="text-muted truncate">{item.label}</span>
                           <div className="text-right flex-shrink-0">
-                            <p className="text-success font-mono">{formatMoney(item.amount)}</p>
+                            <p className="text-income tabular-nums">{formatMoney(item.amount)}</p>
                             {incomeBreakdown.length > 1 && (
-                              <p className="text-muted text-[10px]">
+                              <p className="text-muted text-xs">
                                 {formatShareOfTotal(item.sharePercent, "ingresos")}
                               </p>
                             )}
@@ -1403,7 +1404,7 @@ export default function ReportsPage() {
                     <p className="text-muted text-xs uppercase tracking-wide mb-1">
                       Principales gastos
                     </p>
-                    <p className="text-muted text-[10px] mb-2">
+                    <p className="text-muted text-xs mb-2">
                       % = participación sobre el total de gastos del período
                     </p>
                     <div className="space-y-2">
@@ -1411,9 +1412,9 @@ export default function ReportsPage() {
                         <div key={item.label} className="flex justify-between gap-2 text-xs">
                           <span className="text-muted truncate">{item.label}</span>
                           <div className="text-right flex-shrink-0">
-                            <p className="text-danger font-mono">{formatMoney(item.amount)}</p>
+                            <p className="text-expense tabular-nums">{formatMoney(item.amount)}</p>
                             {expenseBreakdown.length > 1 && (
-                              <p className="text-muted text-[10px]">
+                              <p className="text-muted text-xs">
                                 {formatShareOfTotal(item.sharePercent, "gastos")}
                               </p>
                             )}
@@ -1455,7 +1456,7 @@ export default function ReportsPage() {
 
                 {selectedEventGoal && (
                   <div className="pt-3 border-t border-border">
-                    <p className="text-accent text-xs font-medium mb-2 flex items-center gap-1.5">
+                    <p className="text-info text-xs font-medium mb-2 flex items-center gap-1.5">
                       <PartyPopper className="w-3.5 h-3.5" />
                       Meta vs real — {selectedEventGoal.name}
                     </p>
@@ -1463,14 +1464,14 @@ export default function ReportsPage() {
                       {selectedEventGoal.goal != null && (
                         <div className="flex justify-between">
                           <span className="text-muted">Meta</span>
-                          <span className="font-mono">{formatMoney(selectedEventGoal.goal)}</span>
+                          <span className="tabular-nums">{formatMoney(selectedEventGoal.goal)}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
                         <span className="text-muted">Ganancia</span>
                         <span
-                          className={`font-mono font-semibold ${
-                            selectedEventGoal.profit >= 0 ? "text-success" : "text-danger"
+                          className={`tabular-nums font-semibold ${
+                            selectedEventGoal.profit >= 0 ? "text-income" : "text-expense"
                           }`}
                         >
                           {formatMoney(selectedEventGoal.profit)}
@@ -1494,23 +1495,23 @@ export default function ReportsPage() {
           <div className="glass-panel p-4 md:p-6 min-h-[280px] flex flex-col">
             <h3 className="font-semibold mb-3">Ingresos vs Egresos</h3>
             <div className="grid grid-cols-3 gap-2 mb-4 text-center text-xs md:text-sm">
-              <div className="rounded-lg bg-success/10 px-2 py-2">
+              <div className="rounded-lg bg-income/10 px-2 py-2">
                 <p className="text-muted mb-0.5">Ingresos</p>
-                <p className="font-mono font-semibold text-success">
+                <p className="tabular-nums font-semibold text-income">
                   {formatMoney(activeTotals.totalIngresos)}
                 </p>
               </div>
-              <div className="rounded-lg bg-danger/10 px-2 py-2">
+              <div className="rounded-lg bg-expense/10 px-2 py-2">
                 <p className="text-muted mb-0.5">Egresos</p>
-                <p className="font-mono font-semibold text-danger">
+                <p className="tabular-nums font-semibold text-expense">
                   {formatMoney(activeTotals.totalEgresos)}
                 </p>
               </div>
               <div className="rounded-lg bg-surface-elevated px-2 py-2">
                 <p className="text-muted mb-0.5">Resultado</p>
                 <p
-                  className={`font-mono font-semibold ${
-                    activeTotals.resultado >= 0 ? "text-success" : "text-danger"
+                  className={`tabular-nums font-semibold ${
+                    activeTotals.resultado >= 0 ? "text-income" : "text-expense"
                   }`}
                 >
                   {activeTotals.resultado >= 0 ? "+" : ""}
@@ -1534,9 +1535,7 @@ export default function ReportsPage() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) =>
-                      `$${value >= 1000 ? `${Math.round(value / 1000)}k` : value}`
-                    }
+                    tickFormatter={(value) => formatCompactCLP(value)}
                   />
                   <Tooltip
                     contentStyle={{
@@ -1545,7 +1544,7 @@ export default function ReportsPage() {
                       borderRadius: "12px",
                       color: "#0f172a",
                     }}
-                    formatter={(value) => [`$${Number(value).toLocaleString("es-CL")}`, "Monto"]}
+                    formatter={(value) => [formatMoney(Number(value)), "Monto"]}
                   />
                   <Bar dataKey="monto" radius={[6, 6, 0, 0]}>
                     {barChartData.map((entry) => (
@@ -1598,7 +1597,7 @@ export default function ReportsPage() {
                         borderRadius: "12px",
                         color: "#0f172a",
                       }}
-                      formatter={(value) => [`$${Number(value).toLocaleString("es-CL")}`, "Total"]}
+                      formatter={(value) => [formatMoney(Number(value)), "Total"]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -1615,7 +1614,7 @@ export default function ReportsPage() {
                         className="flex justify-between items-center text-sm border-b border-border pb-2"
                       >
                         <span className="text-foreground/80">{item.categoryName}</span>
-                        <span className="font-mono text-muted">
+                        <span className="tabular-nums text-muted">
                           {pct}% · {formatMoney(item.total)}
                         </span>
                       </div>

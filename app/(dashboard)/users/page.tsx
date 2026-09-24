@@ -152,16 +152,16 @@ export default function UsersPage() {
             />
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          {success && <p className="text-green-400 text-sm">{success}</p>}
+          {error && <p className="text-expense text-sm">{error}</p>}
+          {success && <p className="text-income text-sm">{success}</p>}
 
           {tempPassword && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm">
-              <p className="text-amber-200 mb-2">
+            <div className="bg-warning-soft border border-warning/30 rounded-lg p-3 text-sm">
+              <p className="text-warning mb-2">
                 Contraseña temporal (cópiala ahora, no se volverá a mostrar):
               </p>
               <div className="flex items-center gap-2">
-                <code className="text-foreground font-mono">{tempPassword}</code>
+                <code className="text-foreground tabular-nums">{tempPassword}</code>
                 <button
                   type="button"
                   onClick={copyPassword}

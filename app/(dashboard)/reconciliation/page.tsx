@@ -16,6 +16,8 @@ import {
   runReconciliationCheck,
   runSheetsImport,
 } from "@/app/actions/reconciliation";
+import { formatCLP as formatMoney } from "@/lib/format";
+import { toast } from "sonner";
 
 type Snapshot = Awaited<ReturnType<typeof getCurrentReconciliationSnapshot>>[number];
 type HistoryItem = Awaited<ReturnType<typeof getReconciliationHistory>>[number];
@@ -42,17 +44,15 @@ export default function ReconciliationPage() {
     loadData();
   }, []);
 
-  const formatMoney = (value: number) =>
-    "$" + value.toLocaleString("es-CL", { maximumFractionDigits: 0 });
-
   const handleReconcile = async () => {
     setIsRunning(true);
     const result = await runReconciliationCheck();
     if (result.success) {
       setSnapshot(result.results);
       await loadData();
+      toast.success("Conciliación ejecutada");
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
     setIsRunning(false);
   };
@@ -63,9 +63,9 @@ export default function ReconciliationPage() {
     if (result.success) {
       setSnapshot(result.results);
       await loadData();
-      alert(`Importación completada: ${result.imported} nuevos, ${result.skipped} omitidos.`);
+      toast.success(`Importación completada: ${result.imported} nuevos, ${result.skipped} omitidos.`);
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
     setIsImporting(false);
   };
@@ -73,7 +73,7 @@ export default function ReconciliationPage() {
   const allMatch = snapshot.length > 0 && snapshot.every((item) => item.status === "MATCH");
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div>
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Conciliación</h1>
@@ -107,14 +107,14 @@ export default function ReconciliationPage() {
         <>
           <div
             className={`glass-panel p-4 md:p-6 mb-6 border ${
-              allMatch ? "border-success/30 bg-success/5" : "border-danger/30 bg-danger/5"
+              allMatch ? "border-income/30 bg-income/5" : "border-expense/30 bg-expense/5"
             }`}
           >
             <div className="flex items-center gap-3">
               {allMatch ? (
-                <CheckCircle2 className="w-8 h-8 text-success flex-shrink-0" />
+                <CheckCircle2 className="w-8 h-8 text-income flex-shrink-0" />
               ) : (
-                <AlertTriangle className="w-8 h-8 text-danger flex-shrink-0" />
+                <AlertTriangle className="w-8 h-8 text-expense flex-shrink-0" />
               )}
               <div>
                 <p className="font-semibold text-lg">
@@ -137,8 +137,8 @@ export default function ReconciliationPage() {
                   <span
                     className={`text-xs font-bold px-2 py-1 rounded-full ${
                       item.status === "MATCH"
-                        ? "bg-success/20 text-success"
-                        : "bg-danger/20 text-danger"
+                        ? "bg-income/20 text-income"
+                        : "bg-expense/20 text-expense"
                     }`}
                   >
                     {item.status === "MATCH" ? "OK" : "DIFERENCIA"}
@@ -147,17 +147,17 @@ export default function ReconciliationPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted">Saldo Sheets</span>
-                    <span className="font-mono">{formatMoney(item.sheetBalance)}</span>
+                    <span className="tabular-nums">{formatMoney(item.sheetBalance)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Saldo BD</span>
-                    <span className="font-mono">{formatMoney(item.dbBalance)}</span>
+                    <span className="tabular-nums">{formatMoney(item.dbBalance)}</span>
                   </div>
                   <div className="flex justify-between border-t border-border pt-2">
                     <span className="text-muted">Delta</span>
                     <span
-                      className={`font-mono font-bold ${
-                        item.delta === 0 ? "text-success" : "text-danger"
+                      className={`tabular-nums font-bold ${
+                        item.delta === 0 ? "text-income" : "text-expense"
                       }`}
                     >
                       {formatMoney(item.delta)}
@@ -200,25 +200,25 @@ export default function ReconciliationPage() {
                           {format(new Date(log.createdAt), "dd/MM/yy HH:mm", { locale: es })}
                         </td>
                         <td className="px-4 py-3">{log.fundName}</td>
-                        <td className="px-4 py-3 text-right font-mono">
+                        <td className="px-4 py-3 text-right tabular-nums">
                           {formatMoney(log.sheetBalance)}
                         </td>
-                        <td className="px-4 py-3 text-right font-mono">
+                        <td className="px-4 py-3 text-right tabular-nums">
                           {formatMoney(log.dbBalance)}
                         </td>
                         <td
-                          className={`px-4 py-3 text-right font-mono ${
-                            log.delta === 0 ? "text-success" : "text-danger"
+                          className={`px-4 py-3 text-right tabular-nums ${
+                            log.delta === 0 ? "text-income" : "text-expense"
                           }`}
                         >
                           {formatMoney(log.delta)}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                               log.status === "MATCH"
-                                ? "bg-success/20 text-success"
-                                : "bg-danger/20 text-danger"
+                                ? "bg-income/20 text-income"
+                                : "bg-expense/20 text-expense"
                             }`}
                           >
                             {log.status}

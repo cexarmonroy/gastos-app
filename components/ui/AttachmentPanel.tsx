@@ -103,22 +103,22 @@ export function AttachmentPanel({ movementId }: AttachmentPanelProps) {
   return (
     <div className="border-t border-border pt-4 mt-2 space-y-3">
       <div className="flex items-center gap-2">
-        <Paperclip className="w-4 h-4 text-accent" />
+        <Paperclip className="w-4 h-4 text-info" />
         <h3 className="text-sm font-semibold text-foreground">Evidencias / adjuntos</h3>
       </div>
 
-      <p className="text-[11px] text-muted">
+      <p className="text-xs text-muted">
         Las evidencias son inmutables. Para corregir un archivo, sube una nueva versión.
       </p>
 
       {!storageConfigured && (
-        <p className="text-xs text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+        <p className="text-xs text-warning bg-warning-soft border border-warning/20 rounded-lg p-3">
           Supabase Storage no está configurado. Agrega SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY al .env.
         </p>
       )}
 
       {error && (
-        <p className="text-xs text-danger bg-danger/10 border border-danger/20 rounded-lg p-3">{error}</p>
+        <p className="text-xs text-expense bg-expense/10 border border-expense/20 rounded-lg p-3">{error}</p>
       )}
 
       {storageConfigured && (
@@ -182,10 +182,10 @@ export function AttachmentPanel({ movementId }: AttachmentPanelProps) {
                     <p className="text-sm text-foreground truncate" title={item.fileName}>
                       {item.fileName}
                     </p>
-                    <p className="text-[11px] text-muted">
+                    <p className="text-xs text-muted">
                       {item.attachmentTypeLabel} · v{item.version} · {formatSize(item.fileSize)}
                       {isLatest && item.version > 1 && (
-                        <span className="text-success ml-1">· actual</span>
+                        <span className="text-income ml-1">· actual</span>
                       )}
                     </p>
                   </div>
@@ -196,7 +196,7 @@ export function AttachmentPanel({ movementId }: AttachmentPanelProps) {
                       type="button"
                       onClick={() => startUpload(item.id)}
                       disabled={isUploading}
-                      className="p-2 rounded-lg hover:bg-border/40 text-muted hover:text-accent"
+                      className="p-2 rounded-lg hover:bg-border/40 text-muted hover:text-info"
                       title="Subir nueva versión"
                     >
                       <RefreshCw className="w-4 h-4" />

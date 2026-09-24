@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, AlignLeft, Target, Flag } from "lucide-react";
+import { toast } from "sonner";
+import { AlignLeft, Flag } from "lucide-react";
 import { createProject, updateProject } from "@/app/actions/projects";
 import { PROJECT_FUNDING_MODE_LABELS } from "@/lib/finance/project-labels";
 import type { ProjectFundingMode, ProjectStatus, ProjectSummary } from "@/lib/finance/types";
+import { Dialog } from "@/components/ui/Dialog";
+import { Field } from "@/components/ui/Field";
+import { Textarea } from "@/components/ui/Input";
+import { MoneyInput } from "@/components/ui/MoneyInput";
+import { Button } from "@/components/ui/Button";
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -56,8 +62,6 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     }
   }, [isOpen, project]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -76,128 +80,129 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
         : await createProject(payload);
 
     if (result.success) {
+      toast.success(isEditing ? "Proyecto actualizado" : "Proyecto creado");
       onSaved?.();
       onClose();
     } else {
-      alert("Error: " + result.error);
+      toast.error(result.error ?? "No pudimos guardar el proyecto.");
     }
 
     setIsSubmitting(false);
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="modal-panel">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-bold">{isEditing ? "Editar Proyecto" : "Nuevo Proyecto"}</h2>
-          <button onClick={onClose} className="p-2 rounded-full bg-surface-elevated hover:bg-border/40">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-sm text-foreground">Nombre del proyecto</label>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title={isEditing ? "Editar proyecto" : "Nuevo proyecto"}
+      footer={
+        <>
+          <Button type="button" variant="secondary" size="md" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="project-form" size="md" loading={isSubmitting} loadingText="Guardando...">
+            {isEditing ? "Actualizar proyecto" : "Crear proyecto"}
+          </Button>
+        </>
+      }
+    >
+      <form id="project-form" onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Nombre del proyecto">
+          {(inputProps) => (
             <input
+              {...inputProps}
               required
               placeholder="Ej: Techar Patio, Juegos Infantiles"
               className="input-premium"
               value={formData.name}
               onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
             />
-          </div>
+          )}
+        </Field>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm text-foreground">
-                {formData.fundingMode === "EXECUTION" ? "Presupuesto ($)" : "Meta ($)"}
-              </label>
-              <div className="relative">
-                <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  step="1000"
-                  className="input-premium pl-10"
-                  value={formData.targetAmount}
-                  onChange={(e) => setFormData((p) => ({ ...p, targetAmount: e.target.value }))}
-                />
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label={formData.fundingMode === "EXECUTION" ? "Presupuesto" : "Meta"}>
+            {(inputProps) => (
+              <MoneyInput
+                {...inputProps}
+                required
+                value={formData.targetAmount}
+                onChange={(v) => setFormData((p) => ({ ...p, targetAmount: v }))}
+              />
+            )}
+          </Field>
+          <Field label="Estado">
+            {(inputProps) => (
+              <select
+                {...inputProps}
+                className="select-premium py-[11px]"
+                value={formData.status}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, status: e.target.value as ProjectStatus }))
+                }
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        </div>
+
+        <Field
+          label="Tipo de proyecto"
+          hint={
+            formData.fundingMode === "FUNDRAISING"
+              ? "Hay que juntar fondos hacia una meta; el avance se mide con ingresos vinculados."
+              : "Se paga con saldo ya acumulado; el seguimiento muestra el gasto ejecutado."
+          }
+        >
+          {(inputProps) => (
+            <div className="relative">
+              <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+              <select
+                {...inputProps}
+                className="select-premium pl-10 w-full"
+                value={formData.fundingMode}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    fundingMode: e.target.value as ProjectFundingMode,
+                  }))
+                }
+              >
+                <option value="FUNDRAISING">{PROJECT_FUNDING_MODE_LABELS.FUNDRAISING}</option>
+                <option value="EXECUTION">{PROJECT_FUNDING_MODE_LABELS.EXECUTION}</option>
+              </select>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm text-foreground">Estado</label>
-              <div className="relative">
-                <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <select
-                  className="select-premium py-[11px]"
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, status: e.target.value as ProjectStatus }))
-                  }
-                >
-                  {STATUS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
+          )}
+        </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-sm text-foreground">Tipo de proyecto</label>
-            <select
-              className="select-premium w-full"
-              value={formData.fundingMode}
-              onChange={(e) =>
-                setFormData((p) => ({
-                  ...p,
-                  fundingMode: e.target.value as ProjectFundingMode,
-                }))
-              }
-            >
-              <option value="FUNDRAISING">{PROJECT_FUNDING_MODE_LABELS.FUNDRAISING}</option>
-              <option value="EXECUTION">{PROJECT_FUNDING_MODE_LABELS.EXECUTION}</option>
-            </select>
-            <p className="text-[11px] text-muted">
-              {formData.fundingMode === "FUNDRAISING"
-                ? "Hay que juntar fondos hacia una meta; el avance se mide con ingresos vinculados."
-                : "Se paga con saldo ya acumulado; el seguimiento muestra el gasto ejecutado."}
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm text-foreground">Descripción</label>
+        <Field
+          label="Descripción"
+          optional
+          hint={
+            formData.fundingMode === "FUNDRAISING"
+              ? "Vincula ingresos del Fondo de Ahorro para avanzar hacia la meta."
+              : "Vincula los egresos del Fondo de Ahorro para registrar la inversión ejecutada."
+          }
+        >
+          {(inputProps) => (
             <div className="relative">
               <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-muted" />
-              <textarea
-                className="input-premium pl-10 resize-none min-h-[70px]"
+              <Textarea
+                {...inputProps}
+                className="pl-10"
                 placeholder="Objetivo e hitos del proyecto..."
                 value={formData.description}
                 onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
               />
             </div>
-          </div>
-
-          <p className="text-[11px] text-muted">
-            {formData.fundingMode === "FUNDRAISING"
-              ? "Vincula ingresos del Fondo de Ahorro para avanzar hacia la meta."
-              : "Vincula los egresos del Fondo de Ahorro para registrar la inversión ejecutada."}
-          </p>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button type="button" onClick={onClose} className="btn-secondary px-5 py-2">
-              Cancelar
-            </button>
-            <button type="submit" disabled={isSubmitting} className="btn-primary px-5 py-2 disabled:opacity-50">
-              {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Crear"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+        </Field>
+      </form>
+    </Dialog>
   );
 }

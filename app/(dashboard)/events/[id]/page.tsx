@@ -17,6 +17,7 @@ import { getEventDetail } from "@/app/actions/events";
 import { EventModal } from "@/components/ui/EventModal";
 import { RecordModal } from "@/components/ui/RecordModal";
 import type { EventSummary, MovementRecord } from "@/lib/finance/types";
+import { formatCLP as formatMoney } from "@/lib/format";
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session } = useSession();
@@ -48,9 +49,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     loadEvent();
   }, [eventId]);
 
-  const formatMoney = (n: number) =>
-    "$" + n.toLocaleString("es-CL", { maximumFractionDigits: 0 });
-
   if (isLoading) {
     return <div className="glass-panel p-12 text-center text-muted">Cargando...</div>;
   }
@@ -67,7 +65,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div>
       <Link
         href="/events"
         className="inline-flex items-center gap-2 text-muted hover:text-foreground text-sm mb-4"
@@ -106,19 +104,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="glass-panel p-5">
-          <TrendingUp className="w-5 h-5 text-success mb-2" />
+          <TrendingUp className="w-5 h-5 text-income mb-2" />
           <p className="text-muted text-sm">Ingresos</p>
-          <p className="text-2xl font-bold text-success">{formatMoney(event.totalIncome)}</p>
+          <p className="text-2xl font-bold text-income">{formatMoney(event.totalIncome)}</p>
         </div>
         <div className="glass-panel p-5">
-          <TrendingDown className="w-5 h-5 text-danger mb-2" />
+          <TrendingDown className="w-5 h-5 text-expense mb-2" />
           <p className="text-muted text-sm">Gastos</p>
-          <p className="text-2xl font-bold text-danger">{formatMoney(event.totalExpense)}</p>
+          <p className="text-2xl font-bold text-expense">{formatMoney(event.totalExpense)}</p>
         </div>
         <div className="glass-panel p-5">
           <Target className="w-5 h-5 text-primary mb-2" />
           <p className="text-muted text-sm">Ganancia neta</p>
-          <p className={`text-2xl font-bold ${event.profit >= 0 ? "text-success" : "text-danger"}`}>
+          <p className={`text-2xl font-bold ${event.profit >= 0 ? "text-income" : "text-expense"}`}>
             {formatMoney(event.profit)}
           </p>
         </div>
@@ -127,7 +125,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             <p className="text-muted text-sm mb-1">Meta de recaudación</p>
             <p className="text-2xl font-bold">{formatMoney(event.goal)}</p>
             {event.goalProgress != null && (
-              <p className="text-accent text-sm mt-1">{event.goalProgress}% alcanzado</p>
+              <p className="text-info text-sm mt-1">{event.goalProgress}% alcanzado</p>
             )}
           </div>
         )}
@@ -167,16 +165,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
                           m.type === "Ingreso"
-                            ? "bg-success/10 text-success"
-                            : "bg-danger/10 text-danger"
+                            ? "bg-income/10 text-income"
+                            : "bg-expense/10 text-expense"
                         }`}
                       >
                         {m.type}
                       </span>
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-mono font-semibold ${
-                        m.type === "Ingreso" ? "text-success" : "text-danger"
+                      className={`px-4 py-3 text-right tabular-nums font-semibold ${
+                        m.type === "Ingreso" ? "text-income" : "text-expense"
                       }`}
                     >
                       {formatMoney(Math.abs(m.amount))}

@@ -41,11 +41,11 @@ export default function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
 
-      <div className="w-full max-w-md z-10 animate-in fade-in zoom-in-95 duration-500">
+      <div className="w-full max-w-md z-10">
 
         <div className="text-center mb-8">
           <div className="inline-block text-2xl font-bold tracking-tight mb-2 text-foreground">
-            Tesorería<span className="text-gradient">CGPA</span>
+            Tesorería<span className="text-primary">CGPA</span>
           </div>
           <p className="text-muted">Panel del Centro General de Padres</p>
         </div>
@@ -54,7 +54,7 @@ export default function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-6">
             
             {error && (
-              <div className="bg-danger/10 border border-danger/20 text-danger-400 p-3 rounded-lg text-sm flex items-start gap-2 animate-in slide-in-from-top-2">
+              <div className="bg-expense-soft border border-expense/20 text-expense p-3 rounded-lg text-sm flex items-start gap-2 animate-in slide-in-from-top-2">
                 <AlertCircle className="w-5 h-5 shrink-0" />
                 <span>{error}</span>
               </div>

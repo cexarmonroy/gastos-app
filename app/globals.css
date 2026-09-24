@@ -6,9 +6,23 @@
   --background: 248 250 252;
   --foreground: 15 23 42;
   --surface: 255 255 255;
-  --surface-elevated: 241 245 249;
+  --surface-muted: 241 245 249;
   --border: 226 232 240;
-  --muted: 100 116 139;
+  --border-strong: 123 134 152;
+  --text-muted: 71 85 105;
+  --text-subtle: 100 116 139;
+  --primary: 27 54 93;
+  --primary-hover: 20 41 74;
+  --primary-soft: 238 243 250;
+  --focus: 3 105 161;
+  --income: 21 128 61;
+  --income-soft: 240 253 244;
+  --expense: 185 28 28;
+  --expense-soft: 254 242 242;
+  --danger: 220 38 38;
+  --warning: 180 83 9;
+  --warning-soft: 255 251 235;
+  --info: 3 105 161;
   color-scheme: light;
 }
 
@@ -23,13 +37,13 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: var(--font-headline), 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-surface border border-border rounded-xl shadow-sm;
+    @apply bg-surface border border-border rounded-xl;
   }
 
   .glass-card {
@@ -37,7 +51,7 @@ h1, h2, h3 {
   }
 
   .input-premium {
-    @apply w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
+    @apply w-full bg-surface border border-border-strong rounded-lg px-4 py-2.5 text-foreground placeholder-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-all duration-200;
   }
 
   .select-premium {
@@ -63,25 +77,21 @@ h1, h2, h3 {
   }
 
   .modal-panel {
-    @apply relative bg-surface border border-border rounded-2xl w-full max-w-lg shadow-2xl max-h-[90dvh] overflow-y-auto custom-scrollbar;
+    @apply relative bg-surface border border-border rounded-xl w-full max-w-lg shadow-xl max-h-[90dvh] overflow-y-auto custom-scrollbar;
   }
 
   .btn-primary {
-    @apply bg-primary hover:bg-primary-hover text-white font-medium py-2.5 px-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0;
+    @apply bg-primary hover:bg-primary-hover text-white font-medium py-2.5 px-6 rounded-lg transition-colors duration-200;
     min-height: 44px;
   }
 
   .btn-secondary {
-    @apply bg-surface-elevated hover:bg-border/60 text-foreground font-medium py-2.5 px-6 rounded-lg border border-border transition-colors duration-200;
+    @apply bg-surface-elevated hover:bg-border/60 text-foreground font-medium py-2.5 px-6 rounded-lg border border-border-strong transition-colors duration-200;
     min-height: 44px;
   }
 
   .btn-danger {
-    @apply bg-danger hover:bg-red-600 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm transition-colors duration-300;
-  }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-cyan-400;
+    @apply bg-danger hover:bg-red-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors duration-300;
   }
 
   .table-head {
@@ -107,13 +117,13 @@ select.input-premium option,
 select option:checked,
 select.input-premium option:checked,
 .select-premium option:checked {
-  background-color: #dce9ff;
-  color: #1b365d;
+  background-color: rgb(var(--primary-soft));
+  color: rgb(var(--primary));
 }
 
 select option:disabled,
 select.input-premium option:disabled {
-  color: rgb(var(--muted) / 0.6);
+  color: rgb(var(--text-subtle) / 0.6);
 }
 
 input[type="date"],
@@ -156,10 +166,6 @@ input[type="datetime-local"] {
 }
 
 @media (max-width: 640px) {
-  .glass-panel {
-    @apply rounded-lg;
-  }
-
   .input-premium,
   .select-premium,
   select.input-premium {
@@ -167,12 +173,8 @@ input[type="datetime-local"] {
     font-size: 16px;
   }
 
-  body {
-    font-size: 14px;
-  }
-
   .modal-panel {
     max-height: 92dvh;
-    border-radius: 1rem;
+    border-radius: 0.75rem;
   }
 }

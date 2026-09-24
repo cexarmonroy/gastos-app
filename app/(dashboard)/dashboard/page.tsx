@@ -62,6 +62,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatCalendarDate } from "@/lib/date-only";
 import Link from "next/link";
+import { formatCLP as formatM, formatCompactCLP, formatSignedCLP } from "@/lib/format";
 
 type ChartMode = "flow" | "balance";
 
@@ -212,9 +213,6 @@ export default function DashboardPage() {
     [latestEvent]
   );
 
-  const formatM = (val: number) =>
-    "$" + val.toLocaleString("es-CL", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-
   const buildCategoryRecordsHref = (categoryId: string | null, type: "Ingreso" | "Egreso") => {
     const params = new URLSearchParams();
     params.set("type", type === "Ingreso" ? "ingreso" : "egreso");
@@ -247,23 +245,23 @@ export default function DashboardPage() {
       hint: "Suma de Caja Chica y Fondo de Ahorro",
       subtitle: saldoSubtitle,
       subtitleClass:
-        saldoComparison?.direction === "down" ? "text-danger" : "text-success",
+        saldoComparison?.direction === "down" ? "text-expense" : "text-income",
       accentClass: "bg-primary",
     },
     {
       title: "Caja Chica",
       amount: isLoading ? "Cargando..." : formatM(totalCajaChica),
-      icon: <Briefcase className="w-6 h-6 text-success" />,
+      icon: <Briefcase className="w-6 h-6 text-income" />,
       trend: "Posición actual",
       hint: "Saldo acumulado en Caja Chica",
       subtitle: undefined as string | undefined,
       subtitleClass: "",
-      accentClass: "bg-accent",
+      accentClass: "bg-info",
     },
     {
       title: "Fondo de Ahorro",
       amount: isLoading ? "Cargando..." : formatM(totalFondoAhorro),
-      icon: <PiggyBank className="w-6 h-6 text-accent" />,
+      icon: <PiggyBank className="w-6 h-6 text-info" />,
       trend: "Posición actual",
       hint: "Saldo acumulado en Fondo de Ahorro",
       subtitle: undefined as string | undefined,
@@ -276,17 +274,17 @@ export default function DashboardPage() {
     {
       title: `Ingresos — ${periodLabel}`,
       amount: isLoading ? "Cargando..." : formatM(periodIngresos),
-      icon: <ArrowUpRight className="w-6 h-6 text-success" />,
-      iconBoxClass: "bg-success/10 border-success/20",
-      amountClass: "text-success",
+      icon: <ArrowUpRight className="w-6 h-6 text-income" />,
+      iconBoxClass: "bg-income/10 border-income/20",
+      amountClass: "text-income",
       subtitle: undefined as string | undefined,
     },
     {
       title: `Egresos — ${periodLabel}`,
       amount: isLoading ? "Cargando..." : formatM(periodEgresos),
-      icon: <ArrowDownRight className="w-6 h-6 text-danger" />,
-      iconBoxClass: "bg-danger/10 border-danger/20",
-      amountClass: "text-danger",
+      icon: <ArrowDownRight className="w-6 h-6 text-expense" />,
+      iconBoxClass: "bg-expense/10 border-expense/20",
+      amountClass: "text-expense",
       subtitle: undefined as string | undefined,
     },
     {
@@ -294,13 +292,13 @@ export default function DashboardPage() {
       amount: isLoading ? "Cargando..." : formatM(periodResultado),
       icon: <Activity className="w-6 h-6 text-primary" />,
       iconBoxClass: "bg-primary/10 border-primary/20",
-      amountClass: periodResultado >= 0 ? "text-success" : "text-danger",
+      amountClass: periodResultado >= 0 ? "text-income" : "text-expense",
       subtitle: undefined as string | undefined,
     },
   ];
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div>
       <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">
@@ -314,7 +312,7 @@ export default function DashboardPage() {
               Última actualización: {format(lastUpdate, "dd/MM/yyyy HH:mm", { locale: es })}
             </p>
           )}
-          {error && <p className="text-danger text-xs md:text-sm mt-1">⚠️ {error}</p>}
+          {error && <p className="text-expense text-xs md:text-sm mt-1">⚠️ {error}</p>}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <select
@@ -360,7 +358,7 @@ export default function DashboardPage() {
                 <div className="w-5 h-5 md:w-6 md:h-6">{stat.icon}</div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-[10px] md:text-xs font-medium bg-surface-elevated text-muted">
+                <div className="px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-xs md:text-xs font-medium bg-surface-elevated text-muted">
                   {stat.trend}
                 </div>
                 <Info className="w-3 h-3 md:w-4 md:h-4 text-muted opacity-0 group-hover:opacity-100 transition-opacity hidden md:block" />
@@ -421,11 +419,11 @@ export default function DashboardPage() {
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => `$${value >= 1000 ? (value / 1000).toFixed(0) + "k" : value}`}
+                  tickFormatter={(value) => formatCompactCLP(value)}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0", borderRadius: "12px", color: "#0f172a" }}
-                  formatter={(value: any) => [`$${Number(value).toLocaleString("es-CL")}`, "Volumen"]}
+                  formatter={(value: any) => [formatM(Number(value)), "Volumen"]}
                 />
                 <Bar dataKey="total" name="Volumen" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -457,15 +455,15 @@ export default function DashboardPage() {
               )}
 
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="bg-success/10 rounded-xl p-3">
+                <div className="bg-income/10 rounded-xl p-3">
                   <p className="text-muted text-xs font-medium mb-1">Recaudación Bruta</p>
-                  <p className="text-lg font-bold text-success font-mono break-words">
+                  <p className="text-lg font-bold text-income tabular-nums break-words">
                     {formatM(latestEvent.totalIncome)}
                   </p>
                 </div>
-                <div className="bg-danger/10 rounded-xl p-3">
+                <div className="bg-expense/10 rounded-xl p-3">
                   <p className="text-muted text-xs font-medium mb-1">Costos Directos</p>
-                  <p className="text-lg font-bold text-danger font-mono break-words">
+                  <p className="text-lg font-bold text-expense tabular-nums break-words">
                     -{formatM(latestEvent.totalExpense)}
                   </p>
                 </div>
@@ -477,8 +475,8 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="text-muted text-xs font-medium">Ganancia Neta</p>
                     <p
-                      className={`font-bold font-mono truncate ${
-                        latestEvent.profit >= 0 ? "text-success" : "text-danger"
+                      className={`font-bold tabular-nums truncate ${
+                        latestEvent.profit >= 0 ? "text-income" : "text-expense"
                       }`}
                     >
                       {formatM(latestEvent.profit)}
@@ -488,7 +486,7 @@ export default function DashboardPage() {
                 {latestEventRoi !== null && (
                   <span
                     className={`text-xs font-bold whitespace-nowrap ${
-                      latestEventRoi >= 0 ? "text-success" : "text-danger"
+                      latestEventRoi >= 0 ? "text-income" : "text-expense"
                     }`}
                   >
                     Margen {latestEventRoi}%
@@ -553,8 +551,8 @@ export default function DashboardPage() {
                         · {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
                       </span>
                     </span>
-                    <span className="text-success font-semibold font-mono flex-shrink-0 ml-2">
-                      ${item.total.toLocaleString("es-CL")}
+                    <span className="text-income font-semibold tabular-nums flex-shrink-0 ml-2">
+                      {formatM(item.total)}
                     </span>
                   </Link>
                 ))
@@ -582,8 +580,8 @@ export default function DashboardPage() {
                         · {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
                       </span>
                     </span>
-                    <span className="text-danger font-semibold font-mono flex-shrink-0 ml-2">
-                      ${item.total.toLocaleString("es-CL")}
+                    <span className="text-expense font-semibold tabular-nums flex-shrink-0 ml-2">
+                      {formatM(item.total)}
                     </span>
                   </Link>
                 ))
@@ -618,9 +616,7 @@ export default function DashboardPage() {
           </div>
           <div className="w-full h-2 bg-border rounded-full overflow-hidden mb-3">
             <div
-              className={`h-full rounded-full transition-all ${
-                priorityProject.fundingMode === "EXECUTION" ? "bg-danger" : "bg-primary"
-              }`}
+              className="h-full rounded-full bg-primary transition-all"
               style={{
                 width: `${Math.min(
                   100,
@@ -701,9 +697,7 @@ export default function DashboardPage() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) =>
-                      `$${value >= 1000 ? (value / 1000).toFixed(0) + "k" : value}`
-                    }
+                    tickFormatter={(value) => formatCompactCLP(value)}
                   />
                   <Tooltip
                     contentStyle={{
@@ -713,7 +707,7 @@ export default function DashboardPage() {
                       color: "#0f172a",
                     }}
                     itemStyle={{ color: "#0f172a" }}
-                    formatter={(value: any) => [`$${Number(value).toLocaleString("es-CL")}`, undefined]}
+                    formatter={(value: any) => [formatM(Number(value)), undefined]}
                   />
                   <Area
                     type="monotone"
@@ -756,9 +750,7 @@ export default function DashboardPage() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) =>
-                      `$${value >= 1000 ? (value / 1000).toFixed(0) + "k" : value}`
-                    }
+                    tickFormatter={(value) => formatCompactCLP(value)}
                   />
                   <Tooltip
                     contentStyle={{
@@ -767,10 +759,7 @@ export default function DashboardPage() {
                       borderRadius: "12px",
                       color: "#0f172a",
                     }}
-                    formatter={(value: any) => [
-                      `$${Number(value).toLocaleString("es-CL")}`,
-                      "Saldo",
-                    ]}
+                    formatter={(value: any) => [formatM(Number(value)), "Saldo"]}
                   />
                   <Line
                     type="monotone"
@@ -808,8 +797,8 @@ export default function DashboardPage() {
                       <div
                         className={`p-2 rounded-full flex-shrink-0 ${
                           record.type === "Ingreso"
-                            ? "bg-success/20 text-success"
-                            : "bg-danger/20 text-danger"
+                            ? "bg-income/20 text-income"
+                            : "bg-expense/20 text-expense"
                         }`}
                       >
                         {record.type === "Ingreso" ? (
@@ -833,12 +822,11 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div
-                      className={`font-semibold text-sm flex-shrink-0 ml-2 ${
-                        record.type === "Ingreso" ? "text-success" : "text-foreground"
+                      className={`font-semibold text-sm tabular-nums flex-shrink-0 ml-2 ${
+                        record.type === "Ingreso" ? "text-income" : "text-foreground"
                       }`}
                     >
-                      {record.type === "Ingreso" ? "+" : "-"}$
-                      {Math.abs(record.amount).toLocaleString("es-CL")}
+                      {formatSignedCLP(record.amount, record.type === "Ingreso")}
                     </div>
                   </div>
                 );

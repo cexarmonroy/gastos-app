@@ -9,6 +9,7 @@ import { Plus, PartyPopper, TrendingUp, TrendingDown, Target } from "lucide-reac
 import { fetchEvents } from "@/app/actions/events";
 import { EventModal } from "@/components/ui/EventModal";
 import type { EventSummary } from "@/lib/finance/types";
+import { formatCLP as formatMoney } from "@/lib/format";
 
 export default function EventsPage() {
   const { data: session } = useSession();
@@ -30,11 +31,8 @@ export default function EventsPage() {
     loadEvents();
   }, []);
 
-  const formatMoney = (n: number) =>
-    "$" + n.toLocaleString("es-CL", { maximumFractionDigits: 0 });
-
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div>
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Actividades</h1>
@@ -83,7 +81,7 @@ export default function EventsPage() {
                   </p>
                 </div>
                 {event.goalProgress != null && (
-                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-accent/20 text-accent">
+                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-info/20 text-info">
                     {event.goalProgress}%
                   </span>
                 )}
@@ -91,13 +89,13 @@ export default function EventsPage() {
 
               {event.goal != null && event.goalProgress != null && (
                 <div className="mb-4">
-                  <div className="flex justify-between text-[10px] text-muted mb-1">
+                  <div className="flex justify-between text-xs text-muted mb-1">
                     <span>Meta: {formatMoney(event.goal)}</span>
                     <span>{formatMoney(event.totalIncome)} recaudado</span>
                   </div>
                   <div className="h-1.5 bg-border rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all"
+                      className="h-full bg-primary rounded-full transition-all"
                       style={{ width: `${event.goalProgress}%` }}
                     />
                   </div>
@@ -105,26 +103,26 @@ export default function EventsPage() {
               )}
 
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="bg-success/10 rounded-lg p-2 border border-success/20">
-                  <TrendingUp className="w-3 h-3 text-success mx-auto mb-1" />
+                <div className="bg-income/10 rounded-lg p-2 border border-income/20">
+                  <TrendingUp className="w-3 h-3 text-income mx-auto mb-1" />
                   <p className="text-muted">Ingresos</p>
-                  <p className="font-bold text-success font-mono">{formatMoney(event.totalIncome)}</p>
+                  <p className="font-bold text-income tabular-nums">{formatMoney(event.totalIncome)}</p>
                 </div>
-                <div className="bg-danger/10 rounded-lg p-2 border border-danger/20">
-                  <TrendingDown className="w-3 h-3 text-danger mx-auto mb-1" />
+                <div className="bg-expense/10 rounded-lg p-2 border border-expense/20">
+                  <TrendingDown className="w-3 h-3 text-expense mx-auto mb-1" />
                   <p className="text-muted">Gastos</p>
-                  <p className="font-bold text-danger font-mono">{formatMoney(event.totalExpense)}</p>
+                  <p className="font-bold text-expense tabular-nums">{formatMoney(event.totalExpense)}</p>
                 </div>
                 <div className="bg-primary/10 rounded-lg p-2 border border-primary/20">
                   <Target className="w-3 h-3 text-primary mx-auto mb-1" />
                   <p className="text-muted">Ganancia</p>
-                  <p className={`font-bold font-mono ${event.profit >= 0 ? "text-success" : "text-danger"}`}>
+                  <p className={`font-bold tabular-nums ${event.profit >= 0 ? "text-income" : "text-expense"}`}>
                     {formatMoney(event.profit)}
                   </p>
                 </div>
               </div>
 
-              <p className="text-muted text-[10px] mt-3">{event.movementCount} movimientos vinculados</p>
+              <p className="text-muted text-xs mt-3">{event.movementCount} movimientos vinculados</p>
             </Link>
           ))}
         </div>

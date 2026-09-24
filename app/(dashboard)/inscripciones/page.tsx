@@ -43,13 +43,13 @@ export default function InscripcionesPage() {
   });
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
+    <div className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Inscripciones 2026</h1>
             {!isLoadingData && students.length > 0 && (
-              <span className="bg-primary/20 text-primary text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full border border-primary/30 flex items-center gap-1.5 animate-in zoom-in duration-300">
+              <span className="bg-primary/20 text-primary text-xs md:text-xs font-bold px-2.5 py-1 rounded-full border border-primary/30 flex items-center gap-1.5 animate-in zoom-in duration-300">
                 <Users className="w-3 h-3" />
                 {students.length} Alumnos
               </span>
@@ -89,7 +89,7 @@ export default function InscripcionesPage() {
               <input 
                 type="text" 
                 placeholder="Nombre, apellido o apoderado..." 
-                className="input-premium pl-10 focus:ring-2 focus:ring-primary/50"
+                className="input-premium pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -101,7 +101,7 @@ export default function InscripcionesPage() {
       <div className="glass-panel flex-1 flex flex-col overflow-hidden shadow-2xl border-border">
         <div className="overflow-x-auto flex-1 custom-scrollbar">
           <table className="w-full text-xs md:text-sm text-left border-collapse">
-            <thead className="text-[10px] md:text-xs uppercase table-head text-muted">
+            <thead className="text-xs md:text-xs uppercase table-head text-muted">
               <tr>
                 <th className="px-3 md:px-6 py-3 md:py-4 font-bold text-muted tracking-wider">Nombre</th>
                 <th className="px-4 md:px-6 py-3 md:py-4 font-bold text-muted tracking-wider hidden sm:table-cell">Fecha</th>
@@ -142,13 +142,13 @@ export default function InscripcionesPage() {
                         <span className="font-bold text-foreground text-xs md:text-sm group-hover:text-primary transition-colors leading-tight">
                           {student.apellidoPaterno}
                         </span>
-                        <span className="text-muted text-[10px] md:text-xs">
+                        <span className="text-muted text-xs md:text-xs">
                           {student.nombres}
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 md:px-6 py-4 md:py-5 text-muted font-mono text-[10px] md:text-[11px] hidden sm:table-cell">{student.fecha}</td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 text-foreground/80 text-[11px] md:text-sm leading-tight">
+                    <td className="px-4 md:px-6 py-4 md:py-5 text-muted tabular-nums text-xs md:text-xs hidden sm:table-cell">{student.fecha}</td>
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-foreground/80 text-xs md:text-sm leading-tight">
                       {student.apoderado}
                     </td>
                     <td className="px-4 md:px-6 py-4 md:py-5 hidden lg:table-cell">
@@ -160,9 +160,9 @@ export default function InscripcionesPage() {
                         <span className="text-muted italic text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 md:px-6 py-4 md:py-5 text-muted italic text-[10px] md:text-xs hidden xl:table-cell truncate max-w-[100px]">{student.profesion || "—"}</td>
+                    <td className="px-4 md:px-6 py-4 md:py-5 text-muted italic text-xs md:text-xs hidden xl:table-cell truncate max-w-[100px]">{student.profesion || "—"}</td>
                     <td className="px-3 md:px-6 py-3 md:py-4">
-                      <span className="text-accent font-mono font-bold tracking-tight text-[10px] md:text-sm whitespace-nowrap">
+                      <span className="text-info tabular-nums font-bold tracking-tight text-xs md:text-sm whitespace-nowrap">
                         {student.fono}
                       </span>
                     </td>
@@ -173,18 +173,18 @@ export default function InscripcionesPage() {
           </table>
         </div>
         
-        <div className="border-t border-border p-4 flex items-center justify-between text-[11px] md:text-xs text-muted bg-surface-elevated">
+        <div className="border-t border-border p-4 flex items-center justify-between text-xs md:text-xs text-muted bg-surface-elevated">
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
-              <div className="w-6 h-6 rounded-full bg-primary/20 border border-border flex items-center justify-center text-[10px] text-primary">A</div>
-              <div className="w-6 h-6 rounded-full bg-accent/20 border border-border flex items-center justify-center text-[10px] text-accent">B</div>
-              <div className="w-6 h-6 rounded-full bg-success/20 border border-border flex items-center justify-center text-[10px] text-success">C</div>
+              <div className="w-6 h-6 rounded-full bg-primary/20 border border-border flex items-center justify-center text-xs text-primary">A</div>
+              <div className="w-6 h-6 rounded-full bg-info/20 border border-border flex items-center justify-center text-xs text-info">B</div>
+              <div className="w-6 h-6 rounded-full bg-income/20 border border-border flex items-center justify-center text-xs text-income">C</div>
             </div>
             <span className="hidden sm:inline">Total de {filteredStudents.length} {filteredStudents.length === 1 ? 'estudiante encontrado' : 'estudiantes encontrados'} en {selectedSheet}</span>
             <span className="sm:hidden">{filteredStudents.length} alumnos</span>
           </div>
           <div className="flex items-center gap-2">
-             <span className="w-1.5 h-1.5 rounded-full bg-success" />
+             <span className="w-1.5 h-1.5 rounded-full bg-income" />
              Conectado a Planilla Online
           </div>
         </div>

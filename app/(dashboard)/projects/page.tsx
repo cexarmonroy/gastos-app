@@ -13,6 +13,7 @@ import {
 } from "@/components/projects/ProjectFundingSummary";
 import { PROJECT_STATUS_LABELS } from "@/lib/finance/project-labels";
 import type { ProjectSummary } from "@/lib/finance/types";
+import { formatCLP as formatMoney } from "@/lib/format";
 
 export default function ProjectsPage() {
   const { data: session } = useSession();
@@ -34,11 +35,8 @@ export default function ProjectsPage() {
     loadProjects();
   }, []);
 
-  const formatMoney = (n: number) =>
-    "$" + n.toLocaleString("es-CL", { maximumFractionDigits: 0 });
-
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div>
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Proyectos</h1>
@@ -75,15 +73,15 @@ export default function ProjectsPage() {
             <Link
               key={project.id}
               href={`/projects/${project.id}`}
-              className="glass-panel p-5 hover:border-accent/40 border border-transparent transition-all group"
+              className="glass-panel p-5 hover:border-info/40 border border-transparent transition-all group"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-bold text-lg group-hover:text-accent transition-colors">
+                  <h3 className="font-bold text-lg group-hover:text-info transition-colors">
                     {project.name}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] uppercase tracking-wider text-muted">
+                    <span className="text-xs uppercase tracking-wider text-muted">
                       {PROJECT_STATUS_LABELS[project.status]}
                     </span>
                     <ProjectFundingBadge fundingMode={project.fundingMode} />
@@ -108,17 +106,17 @@ export default function ProjectsPage() {
               />
 
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="bg-success/10 rounded-lg p-2 border border-success/20">
+                <div className="bg-income/10 rounded-lg p-2 border border-income/20">
                   <p className="text-muted">Ingresos</p>
-                  <p className="font-bold text-success font-mono">{formatMoney(project.totalIncome)}</p>
+                  <p className="font-bold text-income tabular-nums">{formatMoney(project.totalIncome)}</p>
                 </div>
-                <div className="bg-danger/10 rounded-lg p-2 border border-danger/20">
+                <div className="bg-expense/10 rounded-lg p-2 border border-expense/20">
                   <p className="text-muted">Gastos</p>
-                  <p className="font-bold text-danger font-mono">{formatMoney(project.totalExpense)}</p>
+                  <p className="font-bold text-expense tabular-nums">{formatMoney(project.totalExpense)}</p>
                 </div>
                 <div className="bg-surface-elevated rounded-lg p-2 border border-border">
                   <p className="text-muted">Saldo</p>
-                  <p className={`font-bold font-mono ${project.balance >= 0 ? "text-success" : "text-danger"}`}>
+                  <p className={`font-bold tabular-nums ${project.balance >= 0 ? "text-income" : "text-expense"}`}>
                     {formatMoney(project.balance)}
                   </p>
                 </div>
